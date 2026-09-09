@@ -43,6 +43,17 @@ This model covers the flow from the client payment request to the payment provid
 - Record security-relevant events without logging sensitive payment data.
 - Reconcile `UNKNOWN` payments with the provider before final resolution.
 
+## STRIDE Classification
+
+| Category | SecurePay example | Control |
+|---|---|---|
+| Spoofing | An attacker uses another customer's identity. | Authentication and MFA for sensitive operations |
+| Tampering | An attacker changes the payment amount. | Server-side validation and integrity checks |
+| Repudiation | A user denies making a payment. | Immutable audit logs and trace IDs |
+| Information Disclosure | Payment data appears in a log or response. | TLS, tokenization, masking, and access controls |
+| Denial of Service | The payment API is flooded with requests. | Rate limiting, quotas, and monitoring |
+| Elevation of Privilege | A customer accesses an administrative operation. | Role-based authorization and least privilege |
+
 ## Residual Risk
 
 An external provider may approve a payment while SecurePay is temporarily unable to receive the response. SecurePay must keep the payment as `UNKNOWN` and reconcile it instead of blindly retrying or marking it as `REJECTED`.
