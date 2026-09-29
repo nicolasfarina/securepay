@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: securepay
+  datasource:
+    url: jdbc:h2:mem:securepay;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  error:
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+securepay:
+  security:
+    # Development-only credentials. Production must supply an external identity provider.
+    demo-password: local-development-only

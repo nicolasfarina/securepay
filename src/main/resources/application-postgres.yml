@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: ${SECUREPAY_DATABASE_URL:jdbc:postgresql://localhost:5432/securepay}
+    username: ${SECUREPAY_DATABASE_USERNAME:securepay}
+    password: ${SECUREPAY_DATABASE_PASSWORD:local-postgres-only}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+securepay:
+  security:
+    demo-password: ${SECUREPAY_DEMO_PASSWORD:local-development-only}

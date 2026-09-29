@@ -40,6 +40,54 @@ Un pago puede tener los siguientes estados:
 - OpenTelemetry
 - GitHub Actions
 
+## Ejecutar localmente
+
+SecurePay requiere Java 21 y Maven. Para usar la base de datos en memoria predeterminada, iniciar la API con:
+
+```shell
+mvn spring-boot:run
+```
+
+Ejecutar la suite de pruebas con:
+
+```shell
+mvn test
+```
+
+Crear un pago con una clave de idempotencia:
+
+```shell
+curl -X POST http://localhost:8080/api/payments \
+  -u customer-123:local-development-only \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: example-payment-001" \
+  -d '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
+```
+
+La API local usa autenticación HTTP Basic sólo para desarrollo. Los pagos siempre se crean para el cliente autenticado; producción debe usar un proveedor de identidad externo y nunca usar la contraseña demo configurada.
+
+Los datos de pagos e idempotencia se almacenan mediante JPA y se administran con migraciones Flyway. El perfil local/de prueba predeterminado usa una base de datos en memoria; el perfil `prod` requiere los valores de conexión PostgreSQL `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME` y `SECUREPAY_DATABASE_PASSWORD`.
+
+El endpoint de salud está disponible en `http://localhost:8080/actuator/health`. Informa el estado general de la aplicación y de la base de datos sin exponer detalles de componentes. Los probes de disponibilidad y actividad están en `/actuator/health/readiness` y `/actuator/health/liveness`.
+
+La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html`; el documento OpenAPI está en `/v3/api-docs`. Swagger UI queda deshabilitado con el perfil `prod`. En la interfaz, usar **Authorize** e ingresar las credenciales demo locales para probar los endpoints de pagos protegidos.
+
+### Ejecutar con PostgreSQL
+
+Docker Compose inicia una base PostgreSQL local con un volumen persistente. Iniciarla con:
+
+```shell
+docker compose up -d postgres
+```
+
+Luego ejecutar SecurePay con el perfil `postgres` para que Flyway aplique las migraciones en PostgreSQL:
+
+```shell
+mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+```
+
+La base local sólo queda disponible en `127.0.0.1:5432`. La contraseña predeterminada es sólo para desarrollo local; configurar `SECUREPAY_DATABASE_PASSWORD` antes de iniciar Compose para cambiarla. Detener la base con `docker compose down`; los datos permanecen en el volumen de Compose.
+
 ## Seguridad
 
 SecurePay seguirá prácticas de seguridad basadas en:
@@ -47,3 +95,9 @@ SecurePay seguirá prácticas de seguridad basadas en:
 - OWASP Top 10
 - OWASP API Security Top 10
 - Buenas prácticas de seguridad en la nube
+
+Artefactos de planificación de seguridad:
+
+- [Modelo de amenazas del flujo de pagos](security/threat-models/securepay-payment-flow.es.md)
+- [Registro de riesgos de seguridad](security/risk-register.es.md)
+- [Plan de verificación de seguridad](security/security-verification-plan.es.md)
