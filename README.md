@@ -42,7 +42,7 @@ A payment can have the following status:
 
 ## Run locally
 
-SecurePay requires Java 21 and Maven. For the default in-memory database, start the API with:
+SecurePay requires Java 25 and Maven. For the default in-memory database, start the API with:
 
 ```shell
 mvn spring-boot:run

@@ -42,7 +42,7 @@ Un pago puede tener los siguientes estados:
 
 ## Ejecutar localmente
 
-SecurePay requiere Java 21 y Maven. Para usar la base de datos en memoria predeterminada, iniciar la API con:
+SecurePay requiere Java 25 y Maven. Para usar la base de datos en memoria predeterminada, iniciar la API con:
 
 ```shell
 mvn spring-boot:run
