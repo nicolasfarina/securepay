@@ -42,7 +42,7 @@ Un pago puede tener los siguientes estados:
 
 ## Ejecutar localmente
 
-SecurePay requiere Java 21 y Maven. Para usar la base de datos en memoria predeterminada, iniciar la API con:
+SecurePay requiere Java 25 y Maven. Para usar la base de datos en memoria predeterminada, iniciar la API con:
 
 ```shell
 mvn spring-boot:run
@@ -71,6 +71,16 @@ Los datos de pagos e idempotencia se almacenan mediante JPA y se administran con
 El endpoint de salud está disponible en `http://localhost:8080/actuator/health`. Informa el estado general de la aplicación y de la base de datos sin exponer detalles de componentes. Los probes de disponibilidad y actividad están en `/actuator/health/readiness` y `/actuator/health/liveness`.
 
 La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html`; el documento OpenAPI está en `/v3/api-docs`. Swagger UI queda deshabilitado con el perfil `prod`. En la interfaz, usar **Authorize** e ingresar las credenciales demo locales para probar los endpoints de pagos protegidos.
+
+### Ejecutar la API y PostgreSQL con Docker
+
+Con Docker Desktop en ejecución, inicia ambos servicios desde PowerShell:
+
+```powershell
+.\scripts\run-local.ps1
+```
+
+El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera la comprobación de disponibilidad de la API y muestra las direcciones locales. Detén los contenedores con `docker compose down`. Si el puerto 8080 ya está ocupado, configura `SECUREPAY_API_PORT` antes de ejecutar el script para elegir otro. También puedes cambiar las contraseñas locales de la base de datos o de demostración con `SECUREPAY_DATABASE_PASSWORD` o `SECUREPAY_DEMO_PASSWORD`.
 
 ### Ejecutar con PostgreSQL
 
