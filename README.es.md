@@ -72,6 +72,16 @@ El endpoint de salud está disponible en `http://localhost:8080/actuator/health`
 
 La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html`; el documento OpenAPI está en `/v3/api-docs`. Swagger UI queda deshabilitado con el perfil `prod`. En la interfaz, usar **Authorize** e ingresar las credenciales demo locales para probar los endpoints de pagos protegidos.
 
+### Ejecutar la API y PostgreSQL con Docker
+
+Con Docker Desktop en ejecución, inicia ambos servicios desde PowerShell:
+
+```powershell
+.\scripts\run-local.ps1
+```
+
+El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera la comprobación de disponibilidad de la API y muestra las direcciones locales. Detén los contenedores con `docker compose down`. Si el puerto 8080 ya está ocupado, configura `SECUREPAY_API_PORT` antes de ejecutar el script para elegir otro. También puedes cambiar las contraseñas locales de la base de datos o de demostración con `SECUREPAY_DATABASE_PASSWORD` o `SECUREPAY_DEMO_PASSWORD`.
+
 ### Ejecutar con PostgreSQL
 
 Docker Compose inicia una base PostgreSQL local con un volumen persistente. Iniciarla con:

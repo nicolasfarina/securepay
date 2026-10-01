@@ -16,5 +16,22 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: securepay-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      SECUREPAY_DATABASE_URL: jdbc:postgresql://postgres:5432/securepay
+      SECUREPAY_DATABASE_USERNAME: securepay
+      SECUREPAY_DATABASE_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:-local-postgres-only}
+      SECUREPAY_DEMO_PASSWORD: ${SECUREPAY_DEMO_PASSWORD:-local-development-only}
+    ports:
+      - "127.0.0.1:${SECUREPAY_API_PORT:-8080}:8080"
+
 volumes:
   securepay-postgres-data:
