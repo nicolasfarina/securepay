@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 9 — Authentication & Authorization with JWT.
+**Current focus:** Day 10 — Payment idempotency and duplicate prevention.
 
 ## Stage 1 — SecurePay Foundations
 
@@ -14,11 +14,11 @@
 | **Day 6** | Centralized error handling and standard API error format. |
 | **Day 7** | Threat Modeling for the payment flow + initial Risk Register. |
 | **Day 8** | Baseline security controls, roles and password policy. |
-| **Day 9 — CURRENT** | JWT Authentication & Authorization. |
+| **Day 9 ✅** | JWT Authentication & Authorization. |
 | **Day 10** | Real payment idempotency and duplicate payment prevention. |
 | **Day 11** | Complete integration tests. |
 
-### Day 9 — Current Scope
+### Day 9 — Completed Scope
 
 - `User`
 - `UserRole`
