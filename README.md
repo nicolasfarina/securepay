@@ -54,23 +54,31 @@ Run the test suite with:
 mvn test
 ```
 
-Create a payment with an idempotency key:
+Authenticate and create a payment with an idempotency key:
+
+```shell
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"customer-123","password":"local-development-only"}'
+```
+
+Use the returned `accessToken` as a Bearer token:
 
 ```shell
 curl -X POST http://localhost:8080/api/payments \
-  -u customer-123:local-development-only \
+  -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: example-payment-001" \
   -d '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
 ```
 
-The local API uses HTTP Basic authentication for development only. Payments are always created for the authenticated customer; production must use an external identity provider and must not use the configured demo password.
+Local demo users are `customer-123`, `customer-789`, and `admin-123`. Passwords are BCrypt-encoded in memory and JWTs are signed with HS256. The development signing key is local-only; production requires `SECUREPAY_JWT_SECRET` and should ultimately use an external identity provider.
 
 Payment and idempotency data are stored through JPA and managed by Flyway migrations. The default local/test profile uses an in-memory database; the `prod` profile requires PostgreSQL connection values through `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME`, and `SECUREPAY_DATABASE_PASSWORD`.
 
 The health endpoint is available at `http://localhost:8080/actuator/health`. It reports the overall application and database status without exposing component details. Readiness and liveness probes are available at `/actuator/health/readiness` and `/actuator/health/liveness`.
 
-Interactive API documentation is available locally at `http://localhost:8080/swagger-ui.html`; the OpenAPI document is at `/v3/api-docs`. Swagger UI is disabled in the `prod` profile. In the UI, use **Authorize** and enter the local demo credentials to try the protected payment endpoints.
+Interactive API documentation is available locally at `http://localhost:8080/swagger-ui.html`; the OpenAPI document is at `/v3/api-docs`. Swagger UI is disabled in the `prod` profile. In the UI, call `/auth/login`, copy the returned JWT, then use **Authorize** with the Bearer token to try protected endpoints.
 
 ### Run the API and PostgreSQL with Docker
 
