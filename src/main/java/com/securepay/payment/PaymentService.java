@@ -1,13 +1,14 @@
 package com.securepay.payment;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -41,8 +42,6 @@ public class PaymentService {
             idempotencyRecordRepository.saveAndFlush(
                     new IdempotencyRecordEntity(customerId, idempotencyKey, fingerprint, payment.id()));
         } catch (DataIntegrityViolationException exception) {
-            // A concurrent request may have claimed the same key after the initial lookup.
-            // The database uniqueness constraint selects the winner; return its result when equivalent.
             var concurrentRecord = idempotencyRecordRepository
                     .findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
             if (concurrentRecord.isPresent()) {
@@ -68,6 +67,12 @@ public class PaymentService {
             throw new PaymentNotFoundException(paymentId);
         }
         return payment;
+    }
+
+    public List<Payment> listAll() {
+        return paymentRepository.findAll().stream()
+                .map(PaymentEntity::toDomain)
+                .toList();
     }
 
     @Transactional
