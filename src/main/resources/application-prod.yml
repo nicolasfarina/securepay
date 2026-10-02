@@ -12,8 +12,6 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
-
 securepay:
   security:
-    # Must be injected from a secret store until an external identity provider is configured.
-    demo-password: ${SECUREPAY_DEMO_PASSWORD}
+    jwt-secret: ${SECUREPAY_JWT_SECRET}

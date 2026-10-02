@@ -1,13 +1,13 @@
 package com.securepay.auth.repository;
 
 import com.securepay.auth.domain.UserAccount;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@Repository
+@Component
 public class InMemoryUserAccountRepository {
 
     private final ConcurrentMap<String, UserAccount> usersByUsername = new ConcurrentHashMap<>();

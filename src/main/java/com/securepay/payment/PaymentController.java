@@ -24,7 +24,7 @@ import java.util.UUID;
 @Validated
 @RequestMapping("/api/payments")
 @Tag(name = "Payments", description = "Create and retrieve customer payments")
-@SecurityRequirement(name = "basicAuth")
+@SecurityRequirement(name = "bearerAuth")
 public class PaymentController {
 
     private final PaymentService paymentService;

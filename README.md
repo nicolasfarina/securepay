@@ -54,23 +54,37 @@ Run the test suite with:
 mvn test
 ```
 
-Create a payment with an idempotency key:
+Register a customer and log in to receive a JWT:
+
+```shell
+curl -X POST http://localhost:8080/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"a-long-local-password"}'
+
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"a-long-local-password"}'
+```
+
+Send the returned token as `Authorization: Bearer <token>` to protected API endpoints. Public registration always creates a `CUSTOMER`; administrative roles must be assigned through a trusted administrative process. Passwords are stored with BCrypt. The current auth account repository is in memory, so accounts are lost when the application restarts and are not shared across instances.
+
+Create a payment by replacing `<token>` with the login response token:
 
 ```shell
 curl -X POST http://localhost:8080/api/payments \
-  -u customer-123:local-development-only \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: example-payment-001" \
   -d '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
 ```
 
-The local API uses HTTP Basic authentication for development only. Payments are always created for the authenticated customer; production must use an external identity provider and must not use the configured demo password.
+Set `SECUREPAY_JWT_SECRET` to a unique secret of at least 32 bytes in every deployed environment. The default key is for local development only. Tokens expire after one hour by default; set `SECUREPAY_JWT_EXPIRATION_SECONDS` to change this.
 
 Payment and idempotency data are stored through JPA and managed by Flyway migrations. The default local/test profile uses an in-memory database; the `prod` profile requires PostgreSQL connection values through `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME`, and `SECUREPAY_DATABASE_PASSWORD`.
 
 The health endpoint is available at `http://localhost:8080/actuator/health`. It reports the overall application and database status without exposing component details. Readiness and liveness probes are available at `/actuator/health/readiness` and `/actuator/health/liveness`.
 
-Interactive API documentation is available locally at `http://localhost:8080/swagger-ui.html`; the OpenAPI document is at `/v3/api-docs`. Swagger UI is disabled in the `prod` profile. In the UI, use **Authorize** and enter the local demo credentials to try the protected payment endpoints.
+Interactive API documentation is available locally at `http://localhost:8080/swagger-ui.html`; the OpenAPI document is at `/v3/api-docs`. Swagger UI is disabled in the `prod` profile. Register or log in, then use **Authorize** with the returned bearer token to try protected payment endpoints.
 
 ### Run the API and PostgreSQL with Docker
 
@@ -80,7 +94,7 @@ With Docker Desktop running, start both services from PowerShell:
 .\scripts\run-local.ps1
 ```
 
-The script builds the Java 25 API image, starts PostgreSQL, waits for the API readiness check, and prints the local URLs. Stop the containers with `docker compose down`. To use a different API port when port 8080 is already occupied, set `SECUREPAY_API_PORT` before running the script. You can also override the local-only database or demo passwords with `SECUREPAY_DATABASE_PASSWORD` or `SECUREPAY_DEMO_PASSWORD`.
+The script builds the Java 25 API image, starts PostgreSQL, waits for the API readiness check, and prints the local URLs. Stop the containers with `docker compose down`. To use a different API port when port 8080 is already occupied, set `SECUREPAY_API_PORT` before running the script. You can override the local database password and JWT signing key with `SECUREPAY_DATABASE_PASSWORD` and `SECUREPAY_JWT_SECRET`.
 
 ### Run against PostgreSQL
 

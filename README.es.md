@@ -54,23 +54,27 @@ Ejecutar la suite de pruebas con:
 mvn test
 ```
 
-Crear un pago con una clave de idempotencia:
+Registrar una cuenta e iniciar sesión para obtener un JWT:
 
 ```shell
-curl -X POST http://localhost:8080/api/payments \
-  -u customer-123:local-development-only \
+curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: example-payment-001" \
-  -d '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
+  -d '{"username":"alice","password":"una-clave-local-larga"}'
+
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"una-clave-local-larga"}'
 ```
 
-La API local usa autenticación HTTP Basic sólo para desarrollo. Los pagos siempre se crean para el cliente autenticado; producción debe usar un proveedor de identidad externo y nunca usar la contraseña demo configurada.
+Enviar el token devuelto como `Authorization: Bearer <token>` a los endpoints protegidos. El registro público siempre crea un usuario `CUSTOMER`; los roles administrativos deben asignarse mediante un proceso administrativo confiable. Las contraseñas se almacenan con BCrypt. El repositorio actual de cuentas vive en memoria: las cuentas se pierden al reiniciar la aplicación y no se comparten entre instancias.
+
+Configurar `SECUREPAY_JWT_SECRET` con una clave única de al menos 32 bytes en cada entorno desplegado. La clave predeterminada sólo es para desarrollo local. Los tokens vencen en una hora por defecto; cambiarlo con `SECUREPAY_JWT_EXPIRATION_SECONDS`.
 
 Los datos de pagos e idempotencia se almacenan mediante JPA y se administran con migraciones Flyway. El perfil local/de prueba predeterminado usa una base de datos en memoria; el perfil `prod` requiere los valores de conexión PostgreSQL `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME` y `SECUREPAY_DATABASE_PASSWORD`.
 
 El endpoint de salud está disponible en `http://localhost:8080/actuator/health`. Informa el estado general de la aplicación y de la base de datos sin exponer detalles de componentes. Los probes de disponibilidad y actividad están en `/actuator/health/readiness` y `/actuator/health/liveness`.
 
-La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html`; el documento OpenAPI está en `/v3/api-docs`. Swagger UI queda deshabilitado con el perfil `prod`. En la interfaz, usar **Authorize** e ingresar las credenciales demo locales para probar los endpoints de pagos protegidos.
+La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html`; el documento OpenAPI está en `/v3/api-docs`. Swagger UI queda deshabilitado con el perfil `prod`. En la interfaz, registrarse o iniciar sesión y luego usar **Authorize** con el token bearer devuelto para probar los endpoints de pagos protegidos.
 
 ### Ejecutar la API y PostgreSQL con Docker
 
@@ -80,7 +84,7 @@ Con Docker Desktop en ejecución, inicia ambos servicios desde PowerShell:
 .\scripts\run-local.ps1
 ```
 
-El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera la comprobación de disponibilidad de la API y muestra las direcciones locales. Detén los contenedores con `docker compose down`. Si el puerto 8080 ya está ocupado, configura `SECUREPAY_API_PORT` antes de ejecutar el script para elegir otro. También puedes cambiar las contraseñas locales de la base de datos o de demostración con `SECUREPAY_DATABASE_PASSWORD` o `SECUREPAY_DEMO_PASSWORD`.
+El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera la comprobación de disponibilidad de la API y muestra las direcciones locales. Detén los contenedores con `docker compose down`. Si el puerto 8080 ya está ocupado, configura `SECUREPAY_API_PORT` antes de ejecutar el script para elegir otro. También puedes cambiar la contraseña de la base de datos y la clave de firma JWT locales con `SECUREPAY_DATABASE_PASSWORD` y `SECUREPAY_JWT_SECRET`.
 
 ### Ejecutar con PostgreSQL
 

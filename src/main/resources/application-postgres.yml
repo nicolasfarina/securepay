@@ -9,4 +9,4 @@ spring:
 
 securepay:
   security:
-    demo-password: ${SECUREPAY_DEMO_PASSWORD:local-development-only}
+    jwt-secret: ${SECUREPAY_JWT_SECRET:local-development-jwt-secret-change-this-before-deploy-2026}

@@ -35,11 +35,14 @@ public class AuthService {
     }
 
     public boolean authenticate(String username, String password) {
+        return authenticateUser(username, password).isPresent();
+    }
+
+    public java.util.Optional<UserAccount> authenticateUser(String username, String password) {
         if (username == null || password == null) {
-            return false;
+            return java.util.Optional.empty();
         }
         return userRepository.findByUsername(username)
-                .map(user -> passwordEncoder.matches(password, user.passwordHash()))
-                .orElse(false);
+                .filter(user -> passwordEncoder.matches(password, user.passwordHash()));
     }
 }

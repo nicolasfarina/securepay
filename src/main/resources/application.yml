@@ -33,5 +33,6 @@ springdoc:
 
 securepay:
   security:
-    # Development-only credentials. Production must supply an external identity provider.
-    demo-password: local-development-only
+    # Override with a randomly generated secret in every deployed environment.
+    jwt-secret: ${SECUREPAY_JWT_SECRET:local-development-jwt-secret-change-this-before-deploy-2026}
+    jwt-expiration-seconds: ${SECUREPAY_JWT_EXPIRATION_SECONDS:3600}
