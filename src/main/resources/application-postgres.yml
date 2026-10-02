@@ -10,3 +10,5 @@ spring:
 securepay:
   security:
     demo-password: ${SECUREPAY_DEMO_PASSWORD:local-development-only}
+    jwt-secret: ${SECUREPAY_JWT_SECRET:development-only-signing-key-change-before-production}
+    jwt-expiration-seconds: ${SECUREPAY_JWT_EXPIRATION_SECONDS:3600}
