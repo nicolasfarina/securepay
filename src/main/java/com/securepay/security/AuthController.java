@@ -40,7 +40,7 @@ public class AuthController {
             return new LoginResponse(
                     jwtService.generateToken(authentication.getName(), role),
                     "Bearer",
-                    3600);
+                    jwtService.expirationSeconds());
         } catch (AuthenticationException exception) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid credentials");
         }
