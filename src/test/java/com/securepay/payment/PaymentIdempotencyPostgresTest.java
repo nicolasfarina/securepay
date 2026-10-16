@@ -1,6 +1,7 @@
 package com.securepay.payment;
 
 import com.jayway.jsonpath.JsonPath;
+import com.securepay.support.PostgresTestDatabase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,19 +44,7 @@ class PaymentIdempotencyPostgresTest {
 
     @DynamicPropertySource
     static void postgres(DynamicPropertyRegistry properties) {
-        String url = required("SECUREPAY_TEST_POSTGRES_URL");
-        if (!url.matches("jdbc:postgresql://[^/]+/securepay_test")) {
-            throw new IllegalArgumentException("Use a disposable PostgreSQL database named securepay_test (no URL parameters)");
-        }
-        properties.add("spring.datasource.url", () -> url);
-        properties.add("spring.datasource.username", () -> required("SECUREPAY_TEST_POSTGRES_USERNAME"));
-        properties.add("spring.datasource.password", () -> required("SECUREPAY_TEST_POSTGRES_PASSWORD"));
-    }
-
-    private static String required(String name) {
-        String value = System.getenv(name);
-        if (value == null || value.isBlank()) throw new IllegalStateException("Missing " + name);
-        return value;
+        PostgresTestDatabase.configure(properties);
     }
 
     @BeforeEach

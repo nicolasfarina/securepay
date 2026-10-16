@@ -1,5 +1,6 @@
 package com.securepay.security;
 
+import jakarta.servlet.DispatcherType;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, exception) ->
                                 response.sendError(HttpStatus.FORBIDDEN.value())))
                 .authorizeHttpRequests(authorize -> authorize
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()

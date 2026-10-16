@@ -54,6 +54,14 @@ Run the test suite with:
 mvn test
 ```
 
+For Day 11 verification with a disposable PostgreSQL database, run from PowerShell with Docker Desktop running:
+
+```powershell
+.\scripts\test-integration.ps1
+```
+
+This runs Maven verification, including the real HTTP API suite and PostgreSQL concurrency tests, then removes its own test database container. It uses temporary loopback ports and restores the process environment, so an existing local API/database can stay running. Requires Java 25, Maven and Docker. See [coverage, results and limitations](docs/day11-integration-verification.md). The default `mvn test` uses H2 and explicitly skips the five PostgreSQL-only tests.
+
 Authenticate and create a payment with an idempotency key:
 
 ```shell
