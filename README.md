@@ -106,14 +106,32 @@ With Docker Desktop running, start both services from PowerShell:
 .\scripts\run-local.ps1
 ```
 
-The script builds the Java 25 API image, starts PostgreSQL, waits for the API readiness check, and prints the local URLs. Stop the containers with `docker compose down`. To use a different API port when port 8080 is already occupied, set `SECUREPAY_API_PORT` before running the script. You can also override the local-only database or demo passwords with `SECUREPAY_DATABASE_PASSWORD` or `SECUREPAY_DEMO_PASSWORD`.
+The script builds the Java 25 API image and waits until both PostgreSQL and the API are healthy. The API's readiness includes database access; its liveness does not depend on the database. PostgreSQL is reachable by the API as `postgres:5432` on the Compose network and has no host port by default. The API runs with a read-only root filesystem and a writable `/tmp`.
+
+For a separate local demo on another API port:
+
+```powershell
+.\scripts\run-local.ps1 -ApiPort 8082 -ProjectName securepay-day13-demo
+docker compose --project-name securepay-day13-demo ps
+docker compose --project-name securepay-day13-demo down
+```
+
+`down` stops/removes the containers and network while retaining the named PostgreSQL volume. Reusing the same project name reuses its data. `down --volumes` deletes that data; it is only used by the isolated verification script. Volumes are not backups. You can override the local-only database/demo passwords and JWT signing value with `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD` and `SECUREPAY_JWT_SECRET` before first startup. Changing the database password environment value alone does not change an already initialized PostgreSQL user's password.
+
+Run the isolated Day 13 checks with:
+
+```powershell
+.\scripts\test-compose.ps1
+```
+
+This verifies startup health, payment persistence across API and full stack replacement, readiness/liveness during a database outage, and recovery. It deletes only its own disposable verification project's data. See [Day 13 evidence and lesson](docs/day13-compose-verification.md).
 
 ### Run against PostgreSQL
 
-Docker Compose starts a local PostgreSQL database with a persistent volume. Start it with:
+To run Java or a database client on the host, opt into publishing PostgreSQL on loopback with the optional override:
 
 ```shell
-docker compose up -d postgres
+docker compose -f compose.yaml -f compose.host-db.yaml up -d --wait postgres
 ```
 
 Then run SecurePay with the `postgres` profile so Flyway applies the migrations to PostgreSQL:
@@ -122,7 +140,7 @@ Then run SecurePay with the `postgres` profile so Flyway applies the migrations 
 mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 ```
 
-The local database is available only on `127.0.0.1:5432`. Its default password is for local development only; set `SECUREPAY_DATABASE_PASSWORD` before starting Compose to override it. Stop the database with `docker compose down`; its data remains in the Compose volume.
+With that override, the database is available on `127.0.0.1:5432`; override the published port with `SECUREPAY_POSTGRES_PORT` and adjust the host application's database URL accordingly. Its default password is for local development only. Stop it with `docker compose -f compose.yaml -f compose.host-db.yaml down`; its data remains in the Compose volume.
 
 ## Security
 

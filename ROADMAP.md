@@ -1,12 +1,12 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 12 — Docker packaging with a multi-stage build.
+**Current focus:** Day 13 — Docker Compose, persistence and health checks.
 
-Day 10 implementation and local PostgreSQL verification are complete; manual review and merge are pending. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
+Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
-Day 11 builds on the verified Day 10 branch. Its real HTTP test suite and PostgreSQL verification are complete locally; both days still require manual review and merge in order. See [Day 11 coverage and verification](docs/day11-integration-verification.md).
+Days 11 and 12 are verified and their PRs #3 and #4 have been merged into the dependency branches. This work starts from `fdf2761` on `codex/day11-integration-tests`, containing both days; at Day 13 verification, `main` still contains Day 10. See [Day 11 coverage](docs/day11-integration-verification.md) and [Day 12 packaging evidence](docs/day12-container-verification.md).
 
-Day 12 builds on Day 11. The source-built image and isolated production-profile PostgreSQL container checks pass locally; manual review and merge remain pending. See [Day 12 packaging decisions and verification](docs/day12-container-verification.md).
+Day 13 implementation and local Compose verification are complete; manual review and merge remain pending. See [Day 13 verification and lesson](docs/day13-compose-verification.md).
 
 ## Stage 1 — SecurePay Foundations
 

@@ -3,9 +3,19 @@ spring:
     url: ${SECUREPAY_DATABASE_URL:jdbc:postgresql://localhost:5432/securepay}
     username: ${SECUREPAY_DATABASE_USERNAME:securepay}
     password: ${SECUREPAY_DATABASE_PASSWORD:local-postgres-only}
+    hikari:
+      connection-timeout: 3000
+      validation-timeout: 1000
   jpa:
     hibernate:
       ddl-auto: validate
+
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: readinessState,db
 
 securepay:
   security:
