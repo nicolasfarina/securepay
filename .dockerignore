@@ -3,3 +3,10 @@
 .mvn
 **/target
 *.iml
+.vscode
+.env
+.env.*
+**/.env
+**/.env.*
+artifacts
+*.log

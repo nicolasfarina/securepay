@@ -90,6 +90,16 @@ Interactive API documentation is available locally at `http://localhost:8080/swa
 
 ### Run the API and PostgreSQL with Docker
 
+The Dockerfile builds and tests the application with Maven/Java 25, then copies its executable JAR into a separate Java runtime image running as UID/GID 10001. Base images are pinned by digest. The final image has no Maven, compiler or project source tree.
+
+Build the image and verify it against an isolated, disposable PostgreSQL container (PowerShell 7 and Docker Desktop required; host Java/Maven are not needed):
+
+```powershell
+.\scripts\test-container.ps1
+```
+
+The script checks the production profile, authentication, payment retries, validation, database row counts, a read-only root filesystem and SIGTERM shutdown, then cleans up its own containers/network/volume. It preserves existing local sessions. See [Day 12 details and results](docs/day12-container-verification.md).
+
 With Docker Desktop running, start both services from PowerShell:
 
 ```powershell
