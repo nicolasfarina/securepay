@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,44 +14,23 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final IdempotencyRecordRepository idempotencyRecordRepository;
+    private final PaymentCreationTransaction paymentCreationTransaction;
 
-    public PaymentService(PaymentRepository paymentRepository, IdempotencyRecordRepository idempotencyRecordRepository) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentCreationTransaction paymentCreationTransaction) {
         this.paymentRepository = paymentRepository;
-        this.idempotencyRecordRepository = idempotencyRecordRepository;
+        this.paymentCreationTransaction = paymentCreationTransaction;
     }
 
-    @Transactional
     public Payment create(CreatePaymentRequest request, String customerId, String idempotencyKey) {
         String fingerprint = fingerprint(customerId, request);
-        var existing = idempotencyRecordRepository.findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
-        if (existing.isPresent()) {
-            if (!existing.get().requestFingerprint().equals(fingerprint)) {
-                throw new IdempotencyConflictException();
-            }
-            return getById(existing.get().paymentId());
-        }
-
-        Instant now = Instant.now();
-        Payment payment = new Payment(UUID.randomUUID(), customerId, request.merchantId(), request.amount(),
-                request.currency(), PaymentStatus.PENDING, now, now);
-        paymentRepository.save(new PaymentEntity(payment.id(), payment.customerId(), payment.merchantId(), payment.amount(),
-                payment.currency(), payment.status(), payment.createdAt(), payment.updatedAt()));
         try {
-            idempotencyRecordRepository.saveAndFlush(
-                    new IdempotencyRecordEntity(customerId, idempotencyKey, fingerprint, payment.id()));
+            return paymentCreationTransaction.create(request, customerId, idempotencyKey, fingerprint);
         } catch (DataIntegrityViolationException exception) {
-            var concurrentRecord = idempotencyRecordRepository
-                    .findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
-            if (concurrentRecord.isPresent()) {
-                if (!concurrentRecord.get().requestFingerprint().equals(fingerprint)) {
-                    throw new IdempotencyConflictException();
-                }
-                return getById(concurrentRecord.get().paymentId());
-            }
-            throw exception;
+            // The failed creation has already rolled back, including its payment row.
+            // Read the winner in a fresh transaction; preserve unrelated integrity failures.
+            return paymentCreationTransaction.findExisting(customerId, idempotencyKey, fingerprint)
+                    .orElseThrow(() -> exception);
         }
-        return payment;
     }
 
     public Payment getById(UUID paymentId) {
