@@ -2,6 +2,8 @@
 
 **Current focus:** Day 10 — Payment idempotency and duplicate prevention.
 
+Day 10 implementation and local PostgreSQL verification are complete; manual review and merge are pending. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
+
 ## Stage 1 — SecurePay Foundations
 
 | Day | Goal |
