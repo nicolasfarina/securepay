@@ -63,7 +63,7 @@ try {
     $paymentId = (Invoke-RestMethod "$baseUrl/api/payments" -Method Post -Headers $headers `
         -ContentType 'application/json' -Body $payload).id
     $databaseId = Invoke-Compose @('ps', '-q', 'postgres')
-    $volume = & docker inspect --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}' $databaseId
+    $volume = & docker inspect --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql"}}{{.Name}}{{end}}{{end}}' $databaseId
     if ($LASTEXITCODE -ne 0 -or -not $volume.StartsWith($project + '_')) { throw 'Unexpected database volume ownership.' }
 
     Write-Host 'Recreating only the API container; the stored payment must remain.'

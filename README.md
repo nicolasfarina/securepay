@@ -106,7 +106,7 @@ Interactive API documentation is available locally at `http://localhost:8080/swa
 
 ### Run the API and PostgreSQL with Docker
 
-The Dockerfile builds and tests the application with Maven/Java 25, then copies its executable JAR into a separate Java runtime image running as UID/GID 10001. Base images are pinned by digest. The final image has no Maven, compiler or project source tree.
+The Dockerfile builds and tests the application with Maven on JDK 26, targeting Java 25, then copies its executable JAR into a separate Java 25 runtime image running as UID/GID 10001. Base images are pinned by digest. The final image has no Maven, compiler or project source tree.
 
 Build the image and verify it against an isolated, disposable PostgreSQL container (PowerShell 7 and Docker Desktop required; host Java/Maven are not needed):
 
@@ -121,6 +121,8 @@ With Docker Desktop running, start both services from PowerShell:
 ```powershell
 .\scripts\run-local.ps1
 ```
+
+The Compose stack uses PostgreSQL 18. Its data directory and volume location differ from PostgreSQL 17. If you already have a PostgreSQL 17 Compose volume, do not start it with the new image expecting an automatic upgrade; back it up and follow [the PostgreSQL 18 volume and migration notes](docs/postgres-18-volume-migration.md) first. The verification script uses a separate disposable volume.
 
 The script builds the Java 25 API image and waits until both PostgreSQL and the API are healthy. The API's readiness includes database access; its liveness does not depend on the database. PostgreSQL is reachable by the API as `postgres:5432` on the Compose network and has no host port by default. The API runs with a read-only root filesystem and a writable `/tmp`.
 

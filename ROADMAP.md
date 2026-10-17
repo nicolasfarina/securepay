@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 21 — Complete the DevSecOps pipeline and PR/branch rules.
+**Current focus:** Day 22 — Map SecurePay against the OWASP Top 10.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -22,7 +22,7 @@ Day 19 builds the runtime image in CI and scans it for fixed high and critical O
 
 Day 20 generates a CycloneDX SBOM for application dependencies and the final runtime image, then uploads both inventories with CI verification artifacts. See [Day 20 SBOM notes](docs/day20-sbom.md).
 
-Day 21 runs CI and secret scanning on PRs and active feature branches, cancels superseded runs, and documents the required `verify` and `gitleaks` checks for `main`. GitHub branch protection still needs to be enabled in repository settings. See [Day 21 pipeline and branch rules](docs/day21-pipeline-and-branch-rules.md).
+Day 21 is complete: CI and secret scanning run on PRs and active feature branches, the active `Protect main` ruleset requires PRs plus up-to-date `verify` and `gitleaks` checks, and the PostgreSQL 18 volume layout is covered by the updated Compose verification. See [Day 21 pipeline and branch rules](docs/day21-pipeline-and-branch-rules.md) and [PostgreSQL 18 volume and migration notes](docs/postgres-18-volume-migration.md).
 
 ## Stage 1 — SecurePay Foundations
 

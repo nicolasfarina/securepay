@@ -1,6 +1,8 @@
 # Day 13 — Compose, persistence and health checks
 
-Implemented and verified locally on October 16, 2026. Base: `fdf2761` on `codex/day11-integration-tests`, which contains the merged Day 12 work. PRs #3 and #4 were merged into dependency branches; this does not imply their changes are already on `main`. Day 13 still requires manual review and merge.
+The initial Day 13 implementation was verified locally on October 16, 2026, from `fdf2761` on `codex/day11-integration-tests`. It was later incorporated into `main` through PR #6. This document preserves the original verification evidence; current PostgreSQL 18 behavior is noted below.
+
+**Current image note:** the original Day 13 verification below used PostgreSQL 17.11. SecurePay later upgraded Compose and integration verification to PostgreSQL 18.6; the current volume layout and the required migration caution are documented in [PostgreSQL 18 volume and migration notes](postgres-18-volume-migration.md).
 
 ## Lesson
 
@@ -26,7 +28,7 @@ The named volume stores PostgreSQL files independently of either container. `doc
 
 ## Changes and decisions
 
-- PostgreSQL uses the tested official `17.11-alpine` image pinned by multi-platform digest. Its TCP health check avoids the temporary Unix-socket-only server during initial database creation.
+- The original Day 13 evidence used the official `17.11-alpine` image pinned by multi-platform digest. Current Compose uses PostgreSQL 18.6 and mounts its named volume at `/var/lib/postgresql`; see the upgrade note linked above.
 - The API starts after PostgreSQL becomes healthy using `depends_on: condition: service_healthy`. It has its own readiness health check. `run-local.ps1` uses Compose `up --build --wait --wait-timeout 120`, so success means both services are healthy rather than merely running.
 - In the `postgres` application profile, readiness includes `readinessState` and `db`; Hikari connection/validation waits are bounded at 3000/1000 ms. A database outage therefore produces readiness HTTP 503 in bounded time. Liveness remains independent of database availability.
 - `service_healthy` controls startup ordering. It does not propagate dependency health automatically after startup. The API's own health check detects an outage. An unhealthy status does not, by itself, restart the container; `restart: unless-stopped` concerns process/container exit. Database recovery was verified without restarting the API.

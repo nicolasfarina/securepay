@@ -6,9 +6,9 @@ Every pull request runs the `verify` job. It checks Maven dependencies, builds a
 
 Pushes to `main`, `feat/**`, and `codex/**` also run the applicable checks. New pushes cancel older in-progress runs for the same branch or pull request so stale builds do not waste runner time.
 
-## Main branch rule to enable
+## Active main branch rules
 
-GitHub branch protection is repository configuration; committing a workflow or this document does not enable it. In the repository settings, create a branch ruleset targeting `main` with:
+The repository has an active branch ruleset named `Protect main`, targeting the default branch (`main`). It applies these rules:
 
 - Require a pull request before merging.
 - Require these status checks: `verify` and `gitleaks`.
@@ -17,8 +17,8 @@ GitHub branch protection is repository configuration; committing a workflow or t
 - Do not allow bypassing the rules.
 - Keep required approvals at zero while this is a single-maintainer project; add an approval requirement when another maintainer can review changes.
 
-These checks are visible on the Day 19–20 PR as successful GitHub Actions checks. Confirm the exact names shown in GitHub when selecting required checks.
+The required status checks are `verify` and `gitleaks`; branches must be up to date. The ruleset has no bypass actors, requires no approvals for this single-maintainer project, and blocks deletion and force pushes.
 
 ## Current repository status
 
-As of October 17, 2026, `main` is not protected and the repository has no rulesets. The GitHub connection available to this task can read those settings but cannot change them. Enable the rule above in GitHub's repository settings to complete Day 21.
+The ruleset was verified active on October 17, 2026. CI also builds and scans the image and runs PostgreSQL integration tests against the same PostgreSQL 18.6 image used by Compose. The Compose persistence test uses its own disposable project and volume; it does not migrate or delete an existing PostgreSQL 17 volume.
