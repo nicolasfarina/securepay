@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 18 — Secret scanning and credential hygiene.
+**Current focus:** Day 19 — Container image scanning and image hardening.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -15,6 +15,8 @@ Day 15 continuous integration workflow is implemented. It runs the H2 suite and 
 Day 16 static security analysis is enforced during Maven `verify` and in CI using SpotBugs with the OWASP Find Security Bugs detectors. See [Day 16 verification](docs/day16-static-analysis.md).
 
 Day 17 dependency scanning is configured for Maven manifests in CI, with weekly Dependabot update checks for Maven modules, Docker images, Compose images, and GitHub Actions. Fixed high or critical findings fail CI. See [Day 17 verification](docs/day17-dependency-scanning.md).
+
+Day 18 scans pull requests, branch pushes, and full Git history for secrets with Gitleaks. Local environment files are ignored by Git, and the README documents secret rotation response. See [Day 18 verification](docs/day18-secret-scanning.md).
 
 ## Stage 1 — SecurePay Foundations
 
