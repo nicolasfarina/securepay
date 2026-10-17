@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 19 — Container image scanning and image hardening.
+**Current focus:** Day 22 — Map SecurePay against the OWASP Top 10.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -17,6 +17,12 @@ Day 16 static security analysis is enforced during Maven `verify` and in CI usin
 Day 17 dependency scanning is configured for Maven manifests in CI, with weekly Dependabot update checks for Maven modules, Docker images, Compose images, and GitHub Actions. Fixed high or critical findings fail CI. See [Day 17 verification](docs/day17-dependency-scanning.md).
 
 Day 18 scans pull requests, branch pushes, and full Git history for secrets with Gitleaks. Local environment files are ignored by Git, and the README documents secret rotation response. See [Day 18 verification](docs/day18-secret-scanning.md).
+
+Day 19 builds the runtime image in CI and scans it for fixed high and critical OS/library vulnerabilities. The non-root runtime and Compose filesystem/capability restrictions remain in force. See [Day 19 verification](docs/day19-container-scanning.md).
+
+Day 20 generates a CycloneDX SBOM for application dependencies and the final runtime image, then uploads both inventories with CI verification artifacts. See [Day 20 SBOM notes](docs/day20-sbom.md).
+
+Day 21 is complete: CI and secret scanning run on PRs and active feature branches, the active `Protect main` ruleset requires PRs plus up-to-date `verify` and `gitleaks` checks, and the PostgreSQL 18 volume layout is covered by the updated Compose verification. See [Day 21 pipeline and branch rules](docs/day21-pipeline-and-branch-rules.md) and [PostgreSQL 18 volume and migration notes](docs/postgres-18-volume-migration.md).
 
 ## Stage 1 — SecurePay Foundations
 

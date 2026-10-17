@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: securepay
       POSTGRES_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:?Set SECUREPAY_DATABASE_PASSWORD before starting Compose}
     volumes:
-      - securepay-postgres-data:/var/lib/postgresql/data
+      - securepay-postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "securepay", "-d", "securepay"]
       interval: 5s

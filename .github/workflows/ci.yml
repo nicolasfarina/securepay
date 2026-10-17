@@ -5,12 +5,12 @@ on:
   push:
     branches:
       - main
-      - feat/auth-service
-      - codex/day11-integration-tests
-      - codex/day12-container
-      - codex/day13-compose
-      - codex/day14-configuration
-      - codex/day15-ci
+      - "feat/**"
+      - "codex/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17.11-alpine
+        image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
         env:
           POSTGRES_DB: securepay_test
           POSTGRES_USER: securepay_test
@@ -54,6 +54,39 @@ jobs:
           exit-code: "1"
           format: table
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container image for scanning
+        id: build-image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: securepay:ci
+
+      - name: Scan container image for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: image
+          scan-ref: securepay:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Generate container image SBOM
+        if: always() && steps.build-image.outcome == 'success'
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: image
+          scan-ref: securepay:ci
+          format: cyclonedx
+          output: securepay-image-sbom.cdx.json
+          exit-code: "0"
+
       - name: Run unit and HTTP integration tests
         run: mvn -B -Duser.timezone=UTC clean verify
 
@@ -66,12 +99,14 @@ jobs:
           SECUREPAY_TEST_POSTGRES_USERNAME: securepay_test
           SECUREPAY_TEST_POSTGRES_PASSWORD: securepay_test_password
 
-      - name: Upload test reports
+      - name: Upload verification reports and SBOM
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: maven-test-reports
+          name: securepay-verification-artifacts
           path: |
             target/surefire-reports/
             target/spotbugsXml.xml
+            target/classes/META-INF/sbom/application.cdx.json
+            securepay-image-sbom.cdx.json
           if-no-files-found: warn
