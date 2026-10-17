@@ -5,12 +5,12 @@ on:
   push:
     branches:
       - main
-      - feat/auth-service
-      - codex/day11-integration-tests
-      - codex/day12-container
-      - codex/day13-compose
-      - codex/day14-configuration
-      - codex/day15-ci
+      - "feat/**"
+      - "codex/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

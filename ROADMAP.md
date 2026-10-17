@@ -22,6 +22,8 @@ Day 19 builds the runtime image in CI and scans it for fixed high and critical O
 
 Day 20 generates a CycloneDX SBOM for application dependencies and the final runtime image, then uploads both inventories with CI verification artifacts. See [Day 20 SBOM notes](docs/day20-sbom.md).
 
+Day 21 runs CI and secret scanning on PRs and active feature branches, cancels superseded runs, and documents the required `verify` and `gitleaks` checks for `main`. GitHub branch protection still needs to be enabled in repository settings. See [Day 21 pipeline and branch rules](docs/day21-pipeline-and-branch-rules.md).
+
 ## Stage 1 — SecurePay Foundations
 
 | Day | Goal |
