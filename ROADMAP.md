@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 20 — Generate SBOM and analyze software supply-chain risks.
+**Current focus:** Day 21 — Complete the DevSecOps pipeline and PR/branch rules.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -19,6 +19,8 @@ Day 17 dependency scanning is configured for Maven manifests in CI, with weekly 
 Day 18 scans pull requests, branch pushes, and full Git history for secrets with Gitleaks. Local environment files are ignored by Git, and the README documents secret rotation response. See [Day 18 verification](docs/day18-secret-scanning.md).
 
 Day 19 builds the runtime image in CI and scans it for fixed high and critical OS/library vulnerabilities. The non-root runtime and Compose filesystem/capability restrictions remain in force. See [Day 19 verification](docs/day19-container-scanning.md).
+
+Day 20 generates a CycloneDX SBOM for application dependencies and the final runtime image, then uploads both inventories with CI verification artifacts. See [Day 20 SBOM notes](docs/day20-sbom.md).
 
 ## Stage 1 — SecurePay Foundations
 

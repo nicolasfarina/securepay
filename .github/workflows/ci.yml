@@ -55,6 +55,7 @@ jobs:
           format: table
 
       - name: Build container image for scanning
+        id: build-image
         run: docker build --tag securepay:ci .
 
       - name: Scan container image for vulnerabilities
@@ -68,6 +69,16 @@ jobs:
           exit-code: "1"
           format: table
 
+      - name: Generate container image SBOM
+        if: always() && steps.build-image.outcome == 'success'
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: image
+          scan-ref: securepay:ci
+          format: cyclonedx
+          output: securepay-image-sbom.cdx.json
+          exit-code: "0"
+
       - name: Run unit and HTTP integration tests
         run: mvn -B -Duser.timezone=UTC clean verify
 
@@ -80,12 +91,14 @@ jobs:
           SECUREPAY_TEST_POSTGRES_USERNAME: securepay_test
           SECUREPAY_TEST_POSTGRES_PASSWORD: securepay_test_password
 
-      - name: Upload test reports
+      - name: Upload verification reports and SBOM
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: maven-test-reports
+          name: securepay-verification-artifacts
           path: |
             target/surefire-reports/
             target/spotbugsXml.xml
+            target/classes/META-INF/sbom/application.cdx.json
+            securepay-image-sbom.cdx.json
           if-no-files-found: warn
