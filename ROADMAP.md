@@ -14,7 +14,7 @@ Day 15 continuous integration workflow is implemented. It runs the H2 suite and 
 
 Day 16 static security analysis is enforced during Maven `verify` and in CI using SpotBugs with the OWASP Find Security Bugs detectors. See [Day 16 verification](docs/day16-static-analysis.md).
 
-Day 17 dependency scanning is configured for Maven modules, Docker images and GitHub Actions. Pull requests fail when they introduce a high or critical vulnerability, and Dependabot checks for updates weekly. See [Day 17 verification](docs/day17-dependency-scanning.md).
+Day 17 dependency scanning is configured for Maven manifests in CI, with weekly Dependabot update checks for Maven modules, Docker images, Compose images, and GitHub Actions. Fixed high or critical findings fail CI. See [Day 17 verification](docs/day17-dependency-scanning.md).
 
 ## Stage 1 — SecurePay Foundations
 

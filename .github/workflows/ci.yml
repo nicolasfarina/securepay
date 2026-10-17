@@ -43,6 +43,17 @@ jobs:
           java-version: "25"
           cache: maven
 
+      - name: Scan dependencies for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
       - name: Run unit and HTTP integration tests
         run: mvn -B -Duser.timezone=UTC clean verify
 
