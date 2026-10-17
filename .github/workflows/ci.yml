@@ -54,6 +54,20 @@ jobs:
           exit-code: "1"
           format: table
 
+      - name: Build container image for scanning
+        run: docker build --tag securepay:ci .
+
+      - name: Scan container image for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: image
+          scan-ref: securepay:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
       - name: Run unit and HTTP integration tests
         run: mvn -B -Duser.timezone=UTC clean verify
 
