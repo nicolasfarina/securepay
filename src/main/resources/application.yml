@@ -1,16 +1,8 @@
 spring:
   application:
     name: securepay
-  datasource:
-    url: jdbc:h2:mem:securepay;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-  flyway:
-    enabled: true
+  profiles:
+    default: local
 
 server:
   error:
@@ -26,13 +18,3 @@ management:
       show-details: never
       probes:
         enabled: true
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-
-securepay:
-  security:
-    demo-password: local-development-only
-    jwt-secret: development-only-signing-key-change-before-production
-    jwt-expiration-seconds: 3600

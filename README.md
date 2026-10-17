@@ -42,7 +42,7 @@ A payment can have the following status:
 
 ## Run locally
 
-SecurePay requires Java 25 and Maven. For the default in-memory database, start the API with:
+SecurePay requires Java 25 and Maven. The default `local` profile uses an in-memory H2 database and local-only demo credentials. Start the API with:
 
 ```shell
 mvn spring-boot:run
@@ -82,7 +82,23 @@ curl -X POST http://localhost:8080/api/payments \
 
 Local demo users are `customer-123`, `customer-789`, and `admin-123`. Passwords are BCrypt-encoded in memory and JWTs are signed with HS256. The development signing key is local-only; production requires `SECUREPAY_JWT_SECRET` and should ultimately use an external identity provider.
 
-Payment and idempotency data are stored through JPA and managed by Flyway migrations. The default local/test profile uses an in-memory database; the `prod` profile requires PostgreSQL connection values through `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME`, and `SECUREPAY_DATABASE_PASSWORD`.
+Payment and idempotency data are stored through JPA and managed by Flyway migrations. Configuration is selected with Spring profiles:
+
+| Profile | Database | Credentials and intended use |
+|---|---|---|
+| `local` (default) | In-memory H2 | Local learning defaults. Set `SECUREPAY_DEMO_PASSWORD` and `SECUREPAY_JWT_SECRET` to override demo credentials. |
+| `postgres` | PostgreSQL | Local PostgreSQL development. Database URL/user default to `localhost:5432/securepay`; set `SECUREPAY_DATABASE_PASSWORD` and `SECUREPAY_JWT_SECRET`. |
+| `prod` | PostgreSQL | Deployment profile. Requires `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME`, `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD`, and `SECUREPAY_JWT_SECRET`; Swagger is disabled. |
+
+For example, run against a local PostgreSQL instance with PowerShell:
+
+```powershell
+$env:SECUREPAY_DATABASE_PASSWORD = 'your-local-database-password'
+$env:SECUREPAY_JWT_SECRET = 'replace-with-a-random-secret-at-least-32-characters'
+mvn spring-boot:run '-Dspring-boot.run.profiles=postgres'
+```
+
+Set environment values in the deployment platform's secret manager for production; do not commit them to source control. Compose requires explicit `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD`, and `SECUREPAY_JWT_SECRET` values and fails during configuration if any are missing.
 
 The health endpoint is available at `http://localhost:8080/actuator/health`. It reports the overall application and database status without exposing component details. Readiness and liveness probes are available at `/actuator/health/readiness` and `/actuator/health/liveness`.
 
@@ -116,7 +132,7 @@ docker compose --project-name securepay-day13-demo ps
 docker compose --project-name securepay-day13-demo down
 ```
 
-`down` stops/removes the containers and network while retaining the named PostgreSQL volume. Reusing the same project name reuses its data. `down --volumes` deletes that data; it is only used by the isolated verification script. Volumes are not backups. You can override the local-only database/demo passwords and JWT signing value with `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD` and `SECUREPAY_JWT_SECRET` before first startup. Changing the database password environment value alone does not change an already initialized PostgreSQL user's password.
+`down` stops/removes the containers and network while retaining the named PostgreSQL volume. Reusing the same project name reuses its data. `down --volumes` deletes that data; it is only used by the isolated verification script. Volumes are not backups. Set `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD`, and `SECUREPAY_JWT_SECRET` before first startup. Changing the database password environment value alone does not change an already initialized PostgreSQL user's password.
 
 Run the isolated Day 13 checks with:
 

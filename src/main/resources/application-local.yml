@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:securepay;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+securepay:
+  security:
+    demo-password: ${SECUREPAY_DEMO_PASSWORD:local-development-only}
+    jwt-secret: ${SECUREPAY_JWT_SECRET:development-only-signing-key-change-before-production}
+    jwt-expiration-seconds: ${SECUREPAY_JWT_EXPIRATION_SECONDS:3600}

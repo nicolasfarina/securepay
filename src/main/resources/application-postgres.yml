@@ -2,7 +2,7 @@ spring:
   datasource:
     url: ${SECUREPAY_DATABASE_URL:jdbc:postgresql://localhost:5432/securepay}
     username: ${SECUREPAY_DATABASE_USERNAME:securepay}
-    password: ${SECUREPAY_DATABASE_PASSWORD:local-postgres-only}
+    password: ${SECUREPAY_DATABASE_PASSWORD}
     hikari:
       connection-timeout: 3000
       validation-timeout: 1000
@@ -20,5 +20,5 @@ management:
 securepay:
   security:
     demo-password: ${SECUREPAY_DEMO_PASSWORD:local-development-only}
-    jwt-secret: ${SECUREPAY_JWT_SECRET:development-only-signing-key-change-before-production}
+    jwt-secret: ${SECUREPAY_JWT_SECRET}
     jwt-expiration-seconds: ${SECUREPAY_JWT_EXPIRATION_SECONDS:3600}
