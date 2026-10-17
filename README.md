@@ -171,3 +171,5 @@ Security planning artifacts:
 - [Payment flow threat model](security/threat-models/securepay-payment-flow.md)
 - [Security risk register](security/risk-register.md)
 - [Security verification plan](security/security-verification-plan.md)
+
+Keep local credentials in process environment variables or an ignored `.env` file; do not commit them. CI runs Gitleaks against pull requests, pushes to `main` and `codex/*`, and the repository's full Git history on a weekly schedule. If a real secret is found, revoke or rotate it first; deleting it from the latest file does not invalidate copies in Git history.
