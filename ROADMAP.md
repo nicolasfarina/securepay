@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 16 — Static Analysis and quality gates.
+**Current focus:** Day 17 — Dependency vulnerability scanning.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -11,6 +11,8 @@ Day 13 implementation and local Compose verification are complete; manual review
 Day 14 externalized configuration and environment profiles are implemented. Local verification is recorded in [Day 14 verification](docs/day14-configuration-verification.md).
 
 Day 15 continuous integration workflow is implemented. It runs the H2 suite and a PostgreSQL-backed verification job on pull requests and selected branch pushes; configure repository branch protection to require the `verify` job. See [Day 15 verification](docs/day15-ci-verification.md).
+
+Day 16 static security analysis is enforced during Maven `verify` and in CI using SpotBugs with the OWASP Find Security Bugs detectors. See [Day 16 verification](docs/day16-static-analysis.md).
 
 ## Stage 1 — SecurePay Foundations
 

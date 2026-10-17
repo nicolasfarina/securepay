@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>25</java.version>
+        <spotbugs.maven.plugin.version>4.10.4.1</spotbugs.maven.plugin.version>
+        <findsecbugs.version>1.14.0</findsecbugs.version>
     </properties>
 
     <dependencies>
@@ -91,6 +93,34 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.maven.plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.h3xstream.findsecbugs</groupId>
+                        <artifactId>findsecbugs-plugin</artifactId>
+                        <version>${findsecbugs.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Medium</threshold>
+                    <maxAllowedViolations>0</maxAllowedViolations>
+                    <includeFilterFile>${project.basedir}/config/spotbugs-security-include.xml</includeFilterFile>
+                    <xmlOutput>true</xmlOutput>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>security-static-analysis</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
