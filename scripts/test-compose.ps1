@@ -23,6 +23,22 @@ function Get-ApiUrl {
     return "http://127.0.0.1:$($Matches[1])"
 }
 
+function Wait-ForHealthy([string]$Service, [int]$TimeoutSeconds = 120) {
+    $containerId = Invoke-Compose @('ps', '-q', $Service)
+    if ([string]::IsNullOrWhiteSpace($containerId)) { throw "Compose did not return a container for $Service." }
+    for ($attempt = 0; $attempt -lt $TimeoutSeconds; $attempt++) {
+        $health = & docker inspect --format '{{.State.Health.Status}}' $containerId
+        if ($LASTEXITCODE -ne 0) { throw "Could not inspect $Service health." }
+        if ($health -eq 'healthy') { return }
+        $state = & docker inspect --format '{{.State.Status}}' $containerId
+        if ($LASTEXITCODE -ne 0 -or $state -eq 'exited' -or $state -eq 'dead') {
+            throw "$Service stopped before becoming healthy (state: $state, health: $health)."
+        }
+        Start-Sleep -Seconds 1
+    }
+    throw "$Service did not become healthy within $TimeoutSeconds seconds."
+}
+
 function Assert-Status($Response, [int]$Expected) {
     if ($Response.StatusCode -ne $Expected) { throw "Expected HTTP $Expected, got $($Response.StatusCode)." }
 }
@@ -67,7 +83,8 @@ try {
     if ($LASTEXITCODE -ne 0 -or -not $volume.StartsWith($project + '_')) { throw 'Unexpected database volume ownership.' }
 
     Write-Host 'Recreating only the API container; the stored payment must remain.'
-    Invoke-Compose @('up', '--force-recreate', '--no-deps', '--no-build', '--wait', '--wait-timeout', '120', 'api') | Out-Null
+    Invoke-Compose @('up', '--force-recreate', '--no-deps', '--no-build', '-d', 'api') | Out-Null
+    Wait-ForHealthy 'api'
     $baseUrl = Get-ApiUrl
     Assert-PaymentExists
 
@@ -75,7 +92,9 @@ try {
     Invoke-Compose @('down') | Out-Null
     & docker volume inspect $volume --format '{{.Name}}' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Compose down unexpectedly removed the database volume.' }
-    Invoke-Compose @('up', '--no-build', '--wait', '--wait-timeout', '120') | Out-Null
+    Invoke-Compose @('up', '--no-build', '-d') | Out-Null
+    Wait-ForHealthy 'postgres'
+    Wait-ForHealthy 'api'
     $baseUrl = Get-ApiUrl
     Assert-PaymentExists
     $replay = Invoke-RestMethod "$baseUrl/api/payments" -Method Post -Headers (Get-CustomerHeaders) `
@@ -99,7 +118,9 @@ try {
     if (-not $unhealthy) { throw 'Compose API health did not reflect the database outage.' }
 
     Write-Host 'Restarting PostgreSQL and waiting for both services to recover.'
-    Invoke-Compose @('up', '--no-build', '--wait', '--wait-timeout', '120') | Out-Null
+    Invoke-Compose @('up', '--no-build', '-d') | Out-Null
+    Wait-ForHealthy 'postgres'
+    Wait-ForHealthy 'api'
     Assert-PaymentExists
     $paymentCount = (Invoke-Compose @('exec', '-T', 'postgres', 'psql', '-U', 'securepay', '-d', 'securepay',
         '-At', '-c', 'SELECT count(*) FROM payments;')).Trim()
