@@ -1,4 +1,7 @@
 target/
+.env
+.env.*
+.envrc
 .mvn/
 .idea/
 *.iml
