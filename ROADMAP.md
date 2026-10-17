@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 17 — Dependency vulnerability scanning.
+**Current focus:** Day 18 — Secret scanning and credential hygiene.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -13,6 +13,8 @@ Day 14 externalized configuration and environment profiles are implemented. Loca
 Day 15 continuous integration workflow is implemented. It runs the H2 suite and a PostgreSQL-backed verification job on pull requests and selected branch pushes; configure repository branch protection to require the `verify` job. See [Day 15 verification](docs/day15-ci-verification.md).
 
 Day 16 static security analysis is enforced during Maven `verify` and in CI using SpotBugs with the OWASP Find Security Bugs detectors. See [Day 16 verification](docs/day16-static-analysis.md).
+
+Day 17 dependency scanning is configured for Maven manifests in CI, with weekly Dependabot update checks for Maven modules, Docker images, Compose images, and GitHub Actions. Fixed high or critical findings fail CI. See [Day 17 verification](docs/day17-dependency-scanning.md).
 
 ## Stage 1 — SecurePay Foundations
 
