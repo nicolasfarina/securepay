@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/auth-service
+      - codex/day11-integration-tests
+      - codex/day12-container
+      - codex/day13-compose
+      - codex/day14-configuration
+      - codex/day15-ci
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_DB: securepay_test
+          POSTGRES_USER: securepay_test
+          POSTGRES_PASSWORD: securepay_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U securepay_test -d securepay_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Run unit and HTTP integration tests
+        run: mvn -B -Duser.timezone=UTC verify
+
+      - name: Run full PostgreSQL integration suite
+        run: |
+          mvn -B -Duser.timezone=UTC -Dtest=ApiEndToEndTest,PaymentIdempotencyPostgresTest verify
+        env:
+          SECUREPAY_POSTGRES_TEST: "true"
+          SECUREPAY_TEST_POSTGRES_URL: jdbc:postgresql://localhost:5432/securepay_test
+          SECUREPAY_TEST_POSTGRES_USERNAME: securepay_test
+          SECUREPAY_TEST_POSTGRES_PASSWORD: securepay_test_password
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-test-reports
+          path: target/surefire-reports/
+          if-no-files-found: warn

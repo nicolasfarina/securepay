@@ -1,0 +1,5 @@
+# Optional: publish PostgreSQL for a Java process or database client on the host.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${SECUREPAY_POSTGRES_PORT:-5432}:5432"

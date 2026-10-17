@@ -1,8 +1,16 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 10 — Payment idempotency and duplicate prevention.
+**Current focus:** Day 16 — Static Analysis and quality gates.
 
-Day 10 implementation and local PostgreSQL verification are complete; manual review and merge are pending. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
+Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
+
+Days 11 and 12 are verified and their PRs #3 and #4 have been merged into the dependency branches. This work starts from `fdf2761` on `codex/day11-integration-tests`, containing both days; at Day 13 verification, `main` still contains Day 10. See [Day 11 coverage](docs/day11-integration-verification.md) and [Day 12 packaging evidence](docs/day12-container-verification.md).
+
+Day 13 implementation and local Compose verification are complete; manual review and merge remain pending. See [Day 13 verification and lesson](docs/day13-compose-verification.md).
+
+Day 14 externalized configuration and environment profiles are implemented. Local verification is recorded in [Day 14 verification](docs/day14-configuration-verification.md).
+
+Day 15 continuous integration workflow is implemented. It runs the H2 suite and a PostgreSQL-backed verification job on pull requests and selected branch pushes; configure repository branch protection to require the `verify` job. See [Day 15 verification](docs/day15-ci-verification.md).
 
 ## Stage 1 — SecurePay Foundations
 

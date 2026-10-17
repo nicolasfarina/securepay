@@ -1,0 +1,258 @@
+package com.securepay.integration;
+
+import com.jayway.jsonpath.JsonPath;
+import com.securepay.security.JwtService;
+import com.securepay.support.PostgresTestDatabase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/** Exercises the running server, security filters, validation, persistence and error dispatch. */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "server.address=127.0.0.1",
+        "spring.datasource.url=jdbc:h2:mem:securepay_day11;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+        "securepay.security.jwt-secret=" + ApiEndToEndTest.TEST_SECRET,
+        "securepay.security.demo-password=" + ApiEndToEndTest.TEST_PASSWORD
+})
+class ApiEndToEndTest {
+    static final String TEST_SECRET = "day11-integration-only-signing-key-change-me";
+    static final String TEST_PASSWORD = "day11-integration-only-password";
+    private static final String PAYMENT = "{\"merchantId\":\"merchant-456\",\"amount\":10.00,\"currency\":\"USD\"}";
+
+    @LocalServerPort private int port;
+    @Autowired private JdbcTemplate database;
+    private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private String customer;
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        if ("true".equals(System.getenv("SECUREPAY_POSTGRES_TEST"))) PostgresTestDatabase.configure(registry);
+    }
+
+    @BeforeEach
+    void prepare() throws Exception {
+        database.update("delete from idempotency_records");
+        database.update("delete from payments");
+        customer = login("customer-123");
+    }
+
+    @Test
+    void createReplayRetrieveAndAdminListingUseTheSamePersistedPayment() throws Exception {
+        String key = UUID.randomUUID().toString();
+        var created = post("/api/payments", customer, key, PAYMENT);
+        expectStatus(created, 201);
+        var body = JsonPath.parse(created.body());
+        String id = body.read("$.id");
+        assertThat(UUID.fromString(id)).isNotNull();
+        assertThat(body.<String>read("$.customerId")).isEqualTo("customer-123");
+        assertThat(body.<String>read("$.merchantId")).isEqualTo("merchant-456");
+        assertThat(body.<Number>read("$.amount").doubleValue()).isEqualTo(10.0);
+        assertThat(body.<String>read("$.currency")).isEqualTo("USD");
+        assertThat(body.<String>read("$.status")).isEqualTo("PENDING");
+        assertThat(body.<String>read("$.createdAt")).isNotBlank();
+        assertThat(body.<String>read("$.updatedAt")).isNotBlank();
+
+        var replay = post("/api/payments", customer, key, PAYMENT);
+        expectStatus(replay, 201);
+        assertThat(JsonPath.parse(replay.body()).jsonString()).isEqualTo(body.jsonString());
+        var retrieved = get("/api/payments/" + id, customer);
+        expectStatus(retrieved, 200);
+        assertThat(JsonPath.parse(retrieved.body()).jsonString()).isEqualTo(body.jsonString());
+        var adminList = get("/api/admin/payments", login("admin-123"));
+        expectStatus(adminList, 200);
+        assertThat(JsonPath.<java.util.List<String>>read(adminList.body(), "$[*].id")).containsExactly(id);
+        assertThat(database.queryForObject("select count(*) from payments", Long.class)).isEqualTo(1);
+        assertThat(database.queryForObject("select count(*) from idempotency_records", Long.class)).isEqualTo(1);
+    }
+
+    @Test
+    void otherCustomersCannotReadPaymentButOwnerStillCan() throws Exception {
+        var created = post("/api/payments", customer, "ownership-key", PAYMENT);
+        expectStatus(created, 201);
+        String id = JsonPath.read(created.body(), "$.id");
+        assertProblem(get("/api/payments/" + id, login("customer-789")), 404);
+        expectStatus(get("/api/payments/" + id, customer), 200);
+        assertProblem(get("/api/payments/" + UUID.randomUUID(), customer), 404);
+    }
+
+    @Test
+    void conflictUsesProblemDetailsAndPreservesOriginalPayment() throws Exception {
+        var created = post("/api/payments", customer, "conflict-key", PAYMENT);
+        expectStatus(created, 201);
+        var conflict = post("/api/payments", customer, "conflict-key", PAYMENT.replace("10.00", "20.00"));
+        assertProblem(conflict, 409);
+        String id = JsonPath.read(created.body(), "$.id");
+        var original = get("/api/payments/" + id, customer);
+        expectStatus(original, 200);
+        assertThat(JsonPath.<Number>read(original.body(), "$.amount").doubleValue()).isEqualTo(10.0);
+        assertThat(database.queryForObject("select count(*) from payments", Long.class)).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidPayments")
+    void invalidPaymentDataReturns400WithoutWritingRows(String payload) throws Exception {
+        expectStatus(post("/api/payments", customer, "invalid-key", payload), 400);
+        assertNoPayments();
+    }
+
+    static Stream<String> invalidPayments() {
+        return Stream.of(
+                PAYMENT.replace("merchant-456", ""),
+                PAYMENT.replace("merchant-456", "m".repeat(129)),
+                PAYMENT.replace("10.00", "null"),
+                PAYMENT.replace("10.00", "0"),
+                PAYMENT.replace("10.00", "-1"),
+                PAYMENT.replace("10.00", "0.001"),
+                PAYMENT.replace("10.00", "1.12345"),
+                PAYMENT.replace("10.00", "1000000000000000"),
+                PAYMENT.replace("USD", "usd"),
+                PAYMENT.replace("USD", "US"),
+                "{}", "{invalid json");
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidKeys")
+    void invalidIdempotencyKeyReturns400WithoutWritingRows(String key) throws Exception {
+        expectStatus(post("/api/payments", customer, key, PAYMENT), 400);
+        assertNoPayments();
+    }
+
+    static Stream<String> invalidKeys() {
+        return Stream.of(null, "", " ", "k".repeat(256));
+    }
+
+    @Test
+    void databaseLengthBoundariesAreAccepted() throws Exception {
+        expectStatus(post("/api/payments", customer, "k".repeat(255),
+                PAYMENT.replace("merchant-456", "m".repeat(128))), 201);
+        assertThat(database.queryForObject("select count(*) from payments", Long.class)).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/payments/not-a-uuid", "/api/payments/00000000-0000-0000-0000-000000000000"})
+    void invalidAndMissingPaymentIdsHaveClientErrorResponses(String path) throws Exception {
+        expectStatus(get(path, customer), path.endsWith("not-a-uuid") ? 400 : 404);
+    }
+
+    @Test
+    void permissionsRejectAnonymousAndAdminPaymentCreation() throws Exception {
+        expectStatus(post("/api/payments", null, "anonymous", PAYMENT), 401);
+        expectStatus(get("/api/admin/payments", null), 401);
+        expectStatus(post("/api/payments", login("admin-123"), "admin", PAYMENT), 403);
+        expectStatus(get("/api/admin/payments", customer), 403);
+        assertNoPayments();
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidTokens")
+    void invalidTokensCannotCreatePaymentsOrReadAdminData(String token) throws Exception {
+        expectStatus(post("/api/payments", token, "invalid-token", PAYMENT), 401);
+        expectStatus(get("/api/admin/payments", token), 401);
+        assertNoPayments();
+    }
+
+    static Stream<String> invalidTokens() {
+        return Stream.of("invalid.jwt.token", "",
+                new JwtService(TEST_SECRET, -60).generateToken("customer-123", "CUSTOMER"),
+                new JwtService("wrong-signing-key-for-day11-integration-tests", 60).generateToken("admin-123", "ADMIN"),
+                new JwtService(TEST_SECRET, 60).generateToken("customer-123", "ADMIN"),
+                new JwtService(TEST_SECRET, 60).generateToken("unknown-user", "CUSTOMER"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"username\":\"customer-123\",\"password\":\"wrong\"}",
+            "{\"username\":\"unknown-user\",\"password\":\"day11-integration-only-password\"}"
+    })
+    void incorrectCredentialsReturn401WithoutAToken(String payload) throws Exception {
+        var response = post("/auth/login", null, null, payload);
+        expectStatus(response, 401);
+        assertThat(response.body()).doesNotContain("accessToken", TEST_PASSWORD, TEST_SECRET);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{}", "{\"username\":\"\",\"password\":\"\"}", "{bad json"})
+    void invalidLoginPayloadReturns400(String payload) throws Exception {
+        expectStatus(post("/auth/login", null, null, payload), 400);
+    }
+
+    @Test
+    void jwtContextDoesNotLeakToTheNextUnauthenticatedRequest() throws Exception {
+        expectStatus(get("/api/admin/payments", login("admin-123")), 200);
+        expectStatus(get("/api/admin/payments", null), 401);
+        expectStatus(get("/error", null), 401);
+    }
+
+    @Test
+    void healthAndApiDocumentationArePublic() throws Exception {
+        for (String path : java.util.List.of("/actuator/health", "/actuator/health/readiness", "/actuator/health/liveness")) {
+            var response = get(path, null);
+            expectStatus(response, 200);
+            assertThat(JsonPath.<String>read(response.body(), "$.status")).isEqualTo("UP");
+            assertThat(response.body()).doesNotContain("components", TEST_PASSWORD, TEST_SECRET);
+        }
+        var docs = get("/v3/api-docs", null);
+        expectStatus(docs, 200);
+        assertThat(JsonPath.<String>read(docs.body(), "$.components.securitySchemes.bearerAuth.scheme"))
+                .isEqualTo("bearer");
+    }
+
+    private String login(String username) throws Exception {
+        var response = post("/auth/login", null, null,
+                "{\"username\":\"" + username + "\",\"password\":\"" + TEST_PASSWORD + "\"}");
+        expectStatus(response, 200);
+        assertThat(JsonPath.<String>read(response.body(), "$.tokenType")).isEqualTo("Bearer");
+        return JsonPath.read(response.body(), "$.accessToken");
+    }
+
+    private HttpResponse<String> post(String path, String token, String key, String body) throws Exception {
+        var request = request(path, token).header("Content-Type", "application/json");
+        if (key != null) request.header("Idempotency-Key", key);
+        return client.send(request.POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> get(String path, String token) throws Exception {
+        return client.send(request(path, token).GET().build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpRequest.Builder request(String path, String token) {
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).timeout(Duration.ofSeconds(15));
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        return request;
+    }
+
+    private void expectStatus(HttpResponse<String> response, int expected) {
+        assertThat(response.statusCode()).as("%s: %s", response.uri(), response.body()).isEqualTo(expected);
+    }
+
+    private void assertProblem(HttpResponse<String> response, int status) {
+        expectStatus(response, status);
+        assertThat(response.headers().firstValue("Content-Type").orElse("")).startsWith("application/problem+json");
+        assertThat(JsonPath.<Integer>read(response.body(), "$.status")).isEqualTo(status);
+        assertThat(JsonPath.<String>read(response.body(), "$.detail")).isNotBlank();
+        assertThat(response.body()).doesNotContain("stackTrace", "org.hibernate", TEST_PASSWORD, TEST_SECRET);
+    }
+
+    private void assertNoPayments() {
+        assertThat(database.queryForObject("select count(*) from payments", Long.class)).isZero();
+        assertThat(database.queryForObject("select count(*) from idempotency_records", Long.class)).isZero();
+    }
+}

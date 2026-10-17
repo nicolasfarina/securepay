@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,7 +25,8 @@ public class PaymentCreationTransaction {
         var existing = lookup(customerId, key, fingerprint);
         if (existing.isPresent()) return existing.get();
 
-        Instant now = Instant.now();
+        // Match the database precision so the first response and later replays agree.
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         Payment payment = new Payment(UUID.randomUUID(), customerId, request.merchantId(), request.amount(),
                 request.currency(), PaymentStatus.PENDING, now, now);
         payments.save(new PaymentEntity(payment.id(), payment.customerId(), payment.merchantId(), payment.amount(),

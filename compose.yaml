@@ -1,26 +1,34 @@
 services:
   postgres:
-    image: postgres:17.6-alpine
-    container_name: securepay-postgres
+    image: postgres:17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    restart: unless-stopped
     environment:
       POSTGRES_DB: securepay
       POSTGRES_USER: securepay
-      POSTGRES_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:-local-postgres-only}
-    ports:
-      - "127.0.0.1:5432:5432"
+      POSTGRES_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:?Set SECUREPAY_DATABASE_PASSWORD before starting Compose}
     volumes:
       - securepay-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U securepay -d securepay"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "securepay", "-d", "securepay"]
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 10s
 
   api:
+    image: ${SECUREPAY_IMAGE:-securepay:local}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: securepay-api
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,10 +36,17 @@ services:
       SPRING_PROFILES_ACTIVE: postgres
       SECUREPAY_DATABASE_URL: jdbc:postgresql://postgres:5432/securepay
       SECUREPAY_DATABASE_USERNAME: securepay
-      SECUREPAY_DATABASE_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:-local-postgres-only}
-      SECUREPAY_DEMO_PASSWORD: ${SECUREPAY_DEMO_PASSWORD:-local-development-only}
+      SECUREPAY_DATABASE_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:?Set SECUREPAY_DATABASE_PASSWORD before starting Compose}
+      SECUREPAY_DEMO_PASSWORD: ${SECUREPAY_DEMO_PASSWORD:?Set SECUREPAY_DEMO_PASSWORD before starting Compose}
+      SECUREPAY_JWT_SECRET: ${SECUREPAY_JWT_SECRET:?Set SECUREPAY_JWT_SECRET before starting Compose}
     ports:
       - "127.0.0.1:${SECUREPAY_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 volumes:
   securepay-postgres-data:

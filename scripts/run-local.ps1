@@ -1,35 +1,35 @@
+#Requires -Version 7.0
+param(
+    [ValidateRange(1, 65535)]
+    [int]$ApiPort = $(if ($env:SECUREPAY_API_PORT) { [int]$env:SECUREPAY_API_PORT } else { 8080 }),
+    [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')]
+    [string]$ProjectName
+)
+
+$previousErrorPreference = $ErrorActionPreference
 $ErrorActionPreference = "Stop"
+$previousApiPort = $env:SECUREPAY_API_PORT
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Push-Location $repoRoot
 
 try {
-    $apiPort = if ($env:SECUREPAY_API_PORT) { $env:SECUREPAY_API_PORT } else { "8080" }
-
-    & docker compose up --build -d
+    $env:SECUREPAY_API_PORT = [string]$ApiPort
+    $composeArguments = @('compose')
+    if ($ProjectName) { $composeArguments += @('--project-name', $ProjectName) }
+    & docker @composeArguments up --build --wait --wait-timeout 120
     if ($LASTEXITCODE -ne 0) {
-        throw "Docker Compose could not start SecurePay."
+        & docker @composeArguments logs --tail 60 api postgres
+        throw "Docker Compose could not make both services healthy. Check port availability and the service logs."
     }
 
-    $readinessUrl = "http://localhost:$apiPort/actuator/health/readiness"
-    for ($attempt = 1; $attempt -le 60; $attempt++) {
-        try {
-            $response = Invoke-WebRequest -Uri $readinessUrl -TimeoutSec 3
-            if ($response.StatusCode -eq 200) {
-                Write-Host "SecurePay is ready at http://localhost:$apiPort"
-                Write-Host "Swagger UI: http://localhost:$apiPort/swagger-ui.html"
-                Write-Host "Stop it with: docker compose down"
-                return
-            }
-        }
-        catch {
-            Start-Sleep -Seconds 2
-        }
-    }
-
-    & docker compose logs --tail 100 api postgres
-    throw "SecurePay did not become ready within 120 seconds."
+    Write-Host "SecurePay and PostgreSQL are healthy."
+    Write-Host "Swagger UI: http://127.0.0.1:$ApiPort/swagger-ui/index.html"
+    if ($ProjectName) { Write-Host "Stop and preserve data: docker compose --project-name $ProjectName down" }
+    else { Write-Host "Stop and preserve data: docker compose down" }
 }
 finally {
     Pop-Location
+    [Environment]::SetEnvironmentVariable('SECUREPAY_API_PORT', $previousApiPort, 'Process')
+    $ErrorActionPreference = $previousErrorPreference
 }
