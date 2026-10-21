@@ -2,6 +2,18 @@
 
 SecurePay is a secure payment platform built as a DevSecOps and Cloud Security learning project.
 
+## Learning progress — Days 23 and 24 complete
+
+On **October 21, 2026**, the learner completed guided lessons in Spanish on access control and cryptographic failures, using existing tests. See [Day 23: access rules, matrix and evidence](docs/day23-access-control.md) and [Day 24: cryptography, test results and limits](docs/day24-cryptographic-failures.md).
+
+- Day 23: ownership HTTP test passed (pasted log: 1 test, no failures/errors/skips); the learner also reported the customer/admin role test passed.
+- Day 24: the learner reported the JWT payload test passed and supplied the invalid-token summary: **6 tests, 0 failures, 0 errors, 0 skipped**.
+- Covered roles vs. ownership, server-side checks, BCrypt hashes, readable signed JWTs, signing secrets, HTTPS and encryption at rest.
+- Pending work remains explicit: missing access-matrix tests, key rotation, deployment TLS and storage/backup encryption. These learning milestones do not certify production security.
+- Application and test code were unchanged. Evidence reported by the learner is distinguished from assistant and CI verification.
+
+**Next session: Day 25 — Injection prevention and tests, planned for October 22, 2026.** Continue in Spanish, step by step; review validation and database queries, then agree any code changes before implementing them.
+
 ## Learning progress — Day 22 complete
 
 On **October 21, 2026**, Day 22's initial OWASP mapping and practical authorization verification were completed. See the [full map, evidence, English practice and next-session plan](docs/day22-owasp-mapping.md).
@@ -11,7 +23,7 @@ On **October 21, 2026**, Day 22's initial OWASP mapping and practical authorizat
 - Executed the real HTTP ownership test successfully, followed by **51 related integration tests: 0 failures, 0 errors, 0 skipped**, using Java 25 and H2. These checks were run by the assistant; PostgreSQL and operational security were not reverified in this session.
 - Recorded open work including deployment cryptography, login rate limiting, security audit events/alerts and software supply-chain integrity. This is an initial security map, not a claim that every risk is resolved.
 
-**Next session: Day 23 — Broken Access Control, planned for October 22, 2026.** Start with the customer/admin/anonymous access matrix and ownership checks. Continue the explanations and English corrections at A2–B1 level. Application and test code were unchanged for Day 22.
+Day 22 prepared the access-control lesson subsequently completed on Day 23; see the current progress above. Application and test code were unchanged for Day 22.
 
 ## Goal
 
