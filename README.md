@@ -2,6 +2,17 @@
 
 SecurePay is a secure payment platform built as a DevSecOps and Cloud Security learning project.
 
+## Learning progress — Day 22 complete
+
+On **October 21, 2026**, Day 22's initial OWASP mapping and practical authorization verification were completed. See the [full map, evidence, English practice and next-session plan](docs/day22-owasp-mapping.md).
+
+- Mapped all ten OWASP Top 10:2021 categories used by the roadmap to existing controls, source/test evidence and remaining work; included a cross-reference to the 2025 edition.
+- Reviewed authentication vs. authorization: missing/invalid authentication → **401**; insufficient role → **403**; another customer's payment → **404** to hide its existence; the owner → **200**.
+- Executed the real HTTP ownership test successfully, followed by **51 related integration tests: 0 failures, 0 errors, 0 skipped**, using Java 25 and H2. These checks were run by the assistant; PostgreSQL and operational security were not reverified in this session.
+- Recorded open work including deployment cryptography, login rate limiting, security audit events/alerts and software supply-chain integrity. This is an initial security map, not a claim that every risk is resolved.
+
+**Next session: Day 23 — Broken Access Control, planned for October 22, 2026.** Start with the customer/admin/anonymous access matrix and ownership checks. Continue the explanations and English corrections at A2–B1 level. Application and test code were unchanged for Day 22.
+
 ## Goal
 
 The goal of SecurePay is to create a secure, observable, and scalable payment platform using modern software engineering practices.
