@@ -1,6 +1,8 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 23 — Broken Access Control (next session planned for October 22, 2026).
+**Current focus:** Day 25 — Injection prevention + tests (next session planned for October 22, 2026).
+
+Days 23 and 24 were completed as guided learning sessions in Spanish on October 21, 2026. The learner ran the existing ownership and customer/admin role tests, the JWT payload test, and the six-case invalid-token test (6 passed, no failures/errors/skips). Source review, pasted logs and learner-reported success are distinguished in [Day 23 evidence](docs/day23-access-control.md) and [Day 24 evidence and limits](docs/day24-cryptographic-failures.md). Missing access-matrix tests, operational key rotation, TLS and encryption-at-rest verification remain open. No application or test code changed.
 
 Day 22 is complete as of October 21, 2026: the initial OWASP Top 10:2021 map records existing controls, evidence and open work, with a cross-reference to the 2025 edition. The real HTTP ownership test passed, and the related H2 integration suites passed all 51 tests (0 failures, 0 errors, 0 skipped). These local checks were executed by the assistant; they do not replace the learner's independent practice or PostgreSQL/operational verification. See [Day 22 mapping, results and next-session plan](docs/day22-owasp-mapping.md). Application and test code were unchanged.
 
@@ -85,8 +87,8 @@ Day 21 is complete: CI and secret scanning run on PRs and active feature branche
 | Day | Goal |
 |---|---|
 | **Day 22 ✅** | Map SecurePay against OWASP Top 10. [Mapping and verification](docs/day22-owasp-mapping.md). |
-| **Day 23** | Broken Access Control. |
-| **Day 24** | Cryptographic Failures. |
+| **Day 23 ✅** | Broken Access Control. [Lesson and evidence](docs/day23-access-control.md). |
+| **Day 24 ✅** | Cryptographic Failures. [Lesson and evidence](docs/day24-cryptographic-failures.md). |
 | **Day 25** | Injection prevention + tests. |
 | **Day 26** | Insecure Design and business-logic abuse cases. |
 | **Day 27** | Security Misconfiguration. |
