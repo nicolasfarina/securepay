@@ -6,6 +6,7 @@ import com.securepay.support.PostgresTestDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -91,6 +94,76 @@ class ApiEndToEndTest {
         assertProblem(get("/api/payments/" + id, login("customer-789")), 404);
         expectStatus(get("/api/payments/" + id, customer), 200);
         assertProblem(get("/api/payments/" + UUID.randomUUID(), customer), 404);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"customer-123,customer-789", "customer-789,customer-123"})
+    void paymentReadAccessMatrixEnforcesRoleAndOwnership(String owner, String otherCustomer) throws Exception {
+        String ownerToken = login(owner);
+        String otherToken = login(otherCustomer);
+        var created = post("/api/payments", ownerToken, "access-matrix", PAYMENT);
+        expectStatus(created, 201);
+        String id = JsonPath.read(created.body(), "$.id");
+        String path = "/api/payments/" + id;
+
+        var anonymous = get(path, null);
+        expectStatus(anonymous, 401);
+        assertThat(anonymous.body()).doesNotContain("\"customerId\"", "merchant-456", "\"amount\"");
+        var admin = get(path, login("admin-123"));
+        expectStatus(admin, 403);
+        assertThat(admin.body()).doesNotContain("\"customerId\"", "merchant-456", "\"amount\"");
+
+        var owned = get(path, ownerToken);
+        expectStatus(owned, 200);
+        assertThat(JsonPath.<String>read(owned.body(), "$.customerId")).isEqualTo(owner);
+        assertThat(JsonPath.<String>read(owned.body(), "$.id")).isEqualTo(id);
+        var hidden = get(path, otherToken);
+        assertProblem(hidden, 404);
+        assertThat(hidden.body()).doesNotContain(owner, "merchant-456", "\"amount\"");
+
+        String missingId = UUID.randomUUID().toString();
+        var missing = get("/api/payments/" + missingId, otherToken);
+        assertProblem(missing, 404);
+        assertThat(hidden.headers().firstValue("Content-Type"))
+                .isEqualTo(missing.headers().firstValue("Content-Type"));
+        // Normalize only the requested UUID: the rest of the public error must be the same.
+        assertThat(JsonPath.<java.util.Map<String, Object>>read(hidden.body().replace(id, "<id>"), "$"))
+                .isEqualTo(JsonPath.read(missing.body().replace(missingId, "<id>"), "$"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"customer-123,customer-789", "customer-789,customer-123"})
+    void suppliedCustomerIdCannotOverrideAuthenticatedOwner(String caller, String claimedOwner) throws Exception {
+        String callerToken = login(caller);
+        String payload = PAYMENT.replace("{", "{\"customerId\":\"" + claimedOwner + "\",");
+        var created = post("/api/payments", callerToken, "forged-owner", payload);
+        expectStatus(created, 201);
+        String id = JsonPath.read(created.body(), "$.id");
+        assertThat(JsonPath.<String>read(created.body(), "$.customerId")).isEqualTo(caller);
+        assertThat(database.queryForObject("select customer_id from payments where id = ?", String.class,
+                UUID.fromString(id))).isEqualTo(caller);
+        expectStatus(get("/api/payments/" + id, callerToken), 200);
+        assertProblem(get("/api/payments/" + id, login(claimedOwner)), 404);
+        assertThat(database.queryForObject("select count(*) from payments", Long.class)).isEqualTo(1);
+    }
+
+    @Test
+    void alteredJwtPayloadCannotImpersonateAdminWithOriginalSignature() throws Exception {
+        expectStatus(get("/api/admin/payments", login("admin-123")), 200);
+        expectStatus(get("/api/admin/payments", customer), 403);
+        String[] parts = customer.split("\\.");
+        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+        assertThat(payload).contains("\"sub\":\"customer-123\"", "\"role\":\"CUSTOMER\"");
+        String alteredPayload = payload.replace("\"sub\":\"customer-123\"", "\"sub\":\"admin-123\"")
+                .replace("\"role\":\"CUSTOMER\"", "\"role\":\"ADMIN\"");
+        String alteredToken = parts[0] + "." + Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(alteredPayload.getBytes(StandardCharsets.UTF_8)) + "." + parts[2];
+
+        expectStatus(get("/api/admin/payments", alteredToken), 401);
+        expectStatus(post("/api/payments", alteredToken, "altered-token", PAYMENT), 401);
+        assertNoPayments();
+        // A rejected token must not break subsequent valid authentication.
+        expectStatus(get("/api/admin/payments", login("admin-123")), 200);
     }
 
     @Test

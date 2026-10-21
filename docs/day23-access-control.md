@@ -53,17 +53,33 @@ mvn '-Dtest=AuthIntegrationTest#customerCannotAccessAdminEndpoint' test
 
 Fuentes de las pruebas: [ApiEndToEndTest](../src/test/java/com/securepay/integration/ApiEndToEndTest.java) y [AuthIntegrationTest](../src/test/java/com/securepay/security/AuthIntegrationTest.java).
 
-No se modificaron clases ni pruebas. No se atribuyen al alumno ejecuciones realizadas antes por el asistente o por CI.
+En la práctica inicial no se modificaron clases ni pruebas. No se atribuyen al alumno ejecuciones realizadas por el asistente o por CI. La ampliación autorizada posteriormente se registra a continuación.
 
-## Cobertura pendiente
+## Ampliación de cobertura — 2026-10-21
 
-- Añadir una prueba específica de GET de pago para admin sin CUSTOMER (403) y para usuario anónimo (401).
-- Probar la matriz de forma simétrica: ambos clientes como dueños y como terceros.
-- Probar un cuerpo de creación con `customerId` ajeno: si el campo se acepta/ignora, nunca debe cambiar el dueño autenticado; si se rechaza, no debe crearse el pago. La política de campos desconocidos no fue comprobada.
-- Comparar respuestas de pago ajeno e inexistente para evitar diferencias que revelen su existencia.
-- Revisar autorización comercial del merchant por separado; no queda demostrada por el control de dueño del pago.
+El alumno autorizó cerrar los casos de aplicación antes de avanzar al día 25. El asistente agregó pruebas HTTP reales en [ApiEndToEndTest](../src/test/java/com/securepay/integration/ApiEndToEndTest.java), conservando la lógica de producción:
 
-Estos casos son trabajo pendiente, no vulnerabilidades confirmadas. Se acordará cualquier cambio de código antes de implementarlo.
+| Prueba | Casos nuevos | Verificación |
+|---|---|---|
+| paymentReadAccessMatrixEnforcesRoleAndOwnership | 2, alternando ambos clientes como dueños | Sobre un pago existente: anónimo 401, admin sin CUSTOMER 403, dueño 200 y otro cliente 404. Las denegaciones no incluyen datos del pago. |
+| suppliedCustomerIdCannotOverrideAuthenticatedOwner | 2, alternando ambos clientes como autores | Un `customerId` ajeno en el cuerpo se ignora: respuesta 201 y dueño igual al usuario autenticado, tanto en respuesta como en base de datos. El dueño puede leerlo y el cliente indicado en el cuerpo recibe 404. |
+
+La prueba de lectura compara además el Content-Type y el JSON completo de un pago ajeno con los de uno inexistente, normalizando únicamente el UUID solicitado. Esto comprueba la forma pública del error; no es un análisis de tiempos ni de todos los canales laterales.
+
+Comando reproducible en Bash:
+
+```bash
+mvn '-Dtest=ApiEndToEndTest#paymentReadAccessMatrixEnforcesRoleAndOwnership+suppliedCustomerIdCannotOverrideAuthenticatedOwner' test
+```
+
+La verificación completa ejecutada por el asistente con Java 25 y H2 fue `mvn -B -ntp verify`: **BUILD SUCCESS; 61 casos contabilizados, 0 fallos, 0 errores y 5 omitidos**. Son **56 aprobados**, incluidos estos 4 casos y el nuevo caso de JWT del día 24. Los 5 omitidos requieren PostgreSQL; no se presentan como aprobados localmente. SpotBugs terminó sin hallazgos. La suite HTTP pasó sus 41 casos.
+
+## Pendientes de alcance posterior
+
+- Revisar autorización comercial del merchant por separado, junto con diseño y reglas de negocio; no queda demostrada por el control de dueño del pago.
+- Ampliar el análisis de canales laterales si cambia el modelo de amenazas.
+
+Los huecos de cobertura de aplicación enumerados en la versión inicial de esta lección quedan cubiertos por estas pruebas. Esto no certifica toda la seguridad del servicio.
 
 ## Continuidad
 
