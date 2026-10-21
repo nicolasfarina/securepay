@@ -146,6 +146,26 @@ With Docker Desktop running, start both services from PowerShell:
 .\scripts\run-local.ps1
 ```
 
+From Bash (Linux, WSL with Docker access, or Git Bash), use:
+
+```bash
+bash scripts/run-local.sh
+```
+
+The Bash launcher generates random local database/demo passwords and a JWT signing key in `.env.securepay-local` on first start, then reuses that file. Git ignores it through the existing `.env.*` rule. The PowerShell launcher still expects credentials supplied through the environment. Keep these local credentials out of source control.
+
+To use a different port and a separate Compose project:
+
+```bash
+bash scripts/run-local.sh --api-port 8082 --project-name securepay-demo
+docker compose --env-file .env.securepay-local --project-name securepay-demo ps
+docker compose --env-file .env.securepay-local --project-name securepay-demo down
+```
+
+Run the Compose commands above from the repository root. For the default launch, omit `--project-name securepay-demo`. The launcher also prints the stop command with its credentials-file path. `down` preserves the database volume; use the same project name and credentials for later starts. Do not remove `.env.securepay-local` while retaining its database volume: generating a different password does not update the password inside an existing database.
+
+Existing `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD` and `SECUREPAY_JWT_SECRET` environment variables override the credentials file; supply them consistently when reusing an existing database. Select the port with `--api-port` or `SECUREPAY_API_PORT`. Use `bash scripts/run-local.sh --help` for usage. Docker Engine and the Compose plugin must be available; no host Java/Maven installation is required.
+
 The Compose stack uses PostgreSQL 18. Its data directory and volume location differ from PostgreSQL 17. If you already have a PostgreSQL 17 Compose volume, do not start it with the new image expecting an automatic upgrade; back it up and follow [the PostgreSQL 18 volume and migration notes](docs/postgres-18-volume-migration.md) first. The verification script uses a separate disposable volume.
 
 The script builds the Java 25 API image and waits until both PostgreSQL and the API are healthy. The API's readiness includes database access; its liveness does not depend on the database. PostgreSQL is reachable by the API as `postgres:5432` on the Compose network and has no host port by default. The API runs with a read-only root filesystem and a writable `/tmp`.

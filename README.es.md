@@ -80,7 +80,27 @@ Con Docker Desktop en ejecución, inicia ambos servicios desde PowerShell:
 .\scripts\run-local.ps1
 ```
 
-El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera la comprobación de disponibilidad de la API y muestra las direcciones locales. Detén los contenedores con `docker compose down`. Si el puerto 8080 ya está ocupado, configura `SECUREPAY_API_PORT` antes de ejecutar el script para elegir otro. También puedes cambiar las contraseñas locales de la base de datos o de demostración con `SECUREPAY_DATABASE_PASSWORD` o `SECUREPAY_DEMO_PASSWORD`.
+El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera que ambos servicios estén saludables y muestra las direcciones locales. La versión PowerShell requiere las credenciales en variables de entorno.
+
+Desde Bash (Linux, WSL con acceso a Docker o Git Bash), usa:
+
+```bash
+bash scripts/run-local.sh
+```
+
+La versión Bash genera contraseñas locales aleatorias para PostgreSQL y los usuarios demo, además de una clave de firma JWT. Las guarda en `.env.securepay-local` y reutiliza ese archivo en los siguientes arranques. La regla existente `.env.*` lo excluye de Git; no subas sus valores al repositorio.
+
+Para elegir otro puerto y un proyecto Compose separado:
+
+```bash
+bash scripts/run-local.sh --api-port 8082 --project-name securepay-demo
+docker compose --env-file .env.securepay-local --project-name securepay-demo ps
+docker compose --env-file .env.securepay-local --project-name securepay-demo down
+```
+
+Ejecuta estos comandos desde la raíz del repositorio. Si arrancaste sin nombre de proyecto, omite `--project-name securepay-demo`. El script también imprime el comando de detención con la ruta del archivo de credenciales. `down` conserva el volumen de datos; reutiliza el mismo proyecto y las mismas credenciales al volver a iniciar. No borres `.env.securepay-local` mientras conserves su volumen: generar otra contraseña no cambia la de una base ya inicializada.
+
+Las variables de entorno `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD` y `SECUREPAY_JWT_SECRET` tienen prioridad sobre el archivo; mantenlas consistentes si reutilizas la base. Puedes seleccionar el puerto con `--api-port` o `SECUREPAY_API_PORT`. Consulta las opciones con `bash scripts/run-local.sh --help`. Requiere Docker Engine y el plugin Compose disponibles; no necesita Java ni Maven instalados en el host.
 
 ### Ejecutar con PostgreSQL
 
