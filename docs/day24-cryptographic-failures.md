@@ -16,7 +16,7 @@ El roadmap usa A02:2021 (Cryptographic Failures); su correspondencia en OWASP 20
 |---|---|---|
 | Contraseñas | BCrypt genera un hash que no se descifra con una clave. Un atacante todavía puede probar contraseñas candidatas; el costo de BCrypt dificulta esos intentos. | [SecurityConfig](../src/main/java/com/securepay/security/SecurityConfig.java) usa BCryptPasswordEncoder y usuarios demo en memoria. No se hizo una prueba dedicada de costo, salt o política de contraseñas. |
 | JWT legible | Base64URL es codificación, no cifrado. Se pueden leer usuario, rol y vencimiento sin la clave. No deben incluirse contraseñas ni secretos. | [JwtService](../src/main/java/com/securepay/security/JwtService.java) construye un JWT firmado con HS256. La prueba de login decodifica su payload. |
-| Integridad del JWT | Cambiar el payload sin recalcular correctamente su firma debe invalidar el token. HS256 usa autenticación mediante una clave compartida. | JwtService verifica el HMAC con MessageDigest.isEqual. La sesión probó firma con otra clave y otros tokens inválidos; no una edición manual del payload de un token válido. |
+| Integridad del JWT | Cambiar el payload sin recalcular correctamente su firma debe invalidar el token. HS256 usa autenticación mediante una clave compartida. | JwtService verifica el HMAC con MessageDigest.isEqual. La práctica inicial cubrió otra clave y tokens inválidos; la ampliación de abajo prueba explícitamente un payload alterado con la firma original. |
 | Clave de firma | Conocer la clave permitiría crear firmas válidas. El valor real no debe subirse a Git, incluso si el repositorio es privado. | [application-prod.yml](../src/main/resources/application-prod.yml) referencia SECUREPAY_JWT_SECRET, no un valor real. La referencia a una variable no demuestra uso de un gestor de secretos. |
 | Rotación | Borrar un secreto del último commit no invalida las copias. Una filtración exige reemplazarlo y dejar de confiar en la clave anterior. | Concepto revisado; no se ejecutó una rotación ni se probó un mecanismo con múltiples claves. |
 | Transporte | HTTPS cifra la comunicación. La firma de un JWT no impide que un tercero robe y reutilice un Bearer token interceptado. | Las pruebas locales usan HTTP. No demuestran HTTPS, certificados ni TLS de producción. |
@@ -59,16 +59,36 @@ Para cada entrada verifica 401 al crear pagos y al consultar el listado administ
 
 El resumen muestra que los seis casos pasaron; no se recibió el log completo de Maven de esta ejecución. Los resultados del alumno se mantienen separados de las comprobaciones del asistente y de CI.
 
-## Pendientes concretos
+## Ampliación — JWT manipulado con firma original
+
+Tras autorización del alumno, el asistente agregó `alteredJwtPayloadCannotImpersonateAdminWithOriginalSignature` en [ApiEndToEndTest](../src/test/java/com/securepay/integration/ApiEndToEndTest.java):
+
+1. Confirma que un admin real accede al listado (200) y un cliente válido no (403).
+2. Obtiene el JWT del cliente mediante login y decodifica el payload.
+3. Cambia simultáneamente el usuario a `admin-123` y el rol a `ADMIN`, para que ambos coincidan con una cuenta real.
+4. Vuelve a codificar el payload y conserva el encabezado y la firma originales, sin firmar de nuevo.
+5. Comprueba 401 tanto al consultar administración como al crear pagos, sin escribir filas.
+6. Confirma que el login y el acceso de un admin válido siguen funcionando después del rechazo.
+
+Cambiar ambos claims evita que la prueba dependa solo del rechazo de un rol incoherente o un usuario desconocido: se prueba una firma que ya no corresponde al contenido.
+
+```bash
+mvn '-Dtest=ApiEndToEndTest#alteredJwtPayloadCannotImpersonateAdminWithOriginalSignature' test
+```
+
+Verificación ejecutada por el asistente el 2026-10-21: `mvn -B -ntp verify` terminó en **BUILD SUCCESS**, con **61 casos contabilizados, 0 fallos, 0 errores y 5 omitidos**: 56 aprobados en el entorno H2 y 5 exclusivos de PostgreSQL omitidos. La suite HTTP pasó sus 41 casos; SpotBugs no reportó hallazgos. Los resultados del alumno anteriores se conservan como evidencia separada.
+
+No fue necesario cambiar la lógica de producción. Se agregó cobertura de regresión al control existente.
+
+## Pendientes de despliegue y evolución
 
 - Verificar TLS de la API y de las conexiones a PostgreSQL según el entorno.
 - Verificar cifrado de almacenamiento y backups y permisos de acceso a claves.
 - Diseñar y ensayar gestión/rotación de claves; la longitud mínima de 32 caracteres comprobada por JwtService no garantiza aleatoriedad.
 - Revisar el parser JWT propio y evaluar una biblioteca mantenida o un proveedor de identidad.
-- Añadir una prueba explícita de payload alterado conservando la firma original.
 - Revisar política y costo del hash de contraseñas. Los usuarios demo en memoria no son un sistema de identidad de producción.
 
-No se implementaron controles nuevos ni se modificó código para esta lección. Los pendientes no se presentan como resueltos.
+TLS, cifrado en reposo y rotación de claves siguen siendo verificaciones operativas pendientes. La evaluación del parser y de la política de contraseñas es trabajo de evolución. El caso de JWT manipulado que faltaba en la práctica de aplicación queda cubierto; no se presentan los demás pendientes como resueltos.
 
 ## Próxima sesión — Día 25: prevención de inyección y pruebas
 

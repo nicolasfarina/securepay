@@ -9,8 +9,9 @@ On **October 21, 2026**, the learner completed guided lessons in Spanish on acce
 - Day 23: ownership HTTP test passed (pasted log: 1 test, no failures/errors/skips); the learner also reported the customer/admin role test passed.
 - Day 24: the learner reported the JWT payload test passed and supplied the invalid-token summary: **6 tests, 0 failures, 0 errors, 0 skipped**.
 - Covered roles vs. ownership, server-side checks, BCrypt hashes, readable signed JWTs, signing secrets, HTTPS and encryption at rest.
-- Pending work remains explicit: missing access-matrix tests, key rotation, deployment TLS and storage/backup encryption. These learning milestones do not certify production security.
-- Application and test code were unchanged. Evidence reported by the learner is distinguished from assistant and CI verification.
+- The learner then authorized completing the missing application checks: 5 new HTTP cases cover payment reads by anonymous/admin/owner/other customer, both ownership directions, a supplied foreign customerId, equivalent hidden/missing errors and a JWT payload changed while retaining its original signature. Production logic was unchanged.
+- Assistant validation: `mvn -B -ntp verify` passed with **61 cases counted: 56 passed, 5 PostgreSQL-only cases skipped, 0 failures/errors**, plus no SpotBugs findings. Learner-reported evidence remains separate in the lesson notes.
+- Key rotation, deployment TLS and storage/backup encryption remain operational work; merchant authorization and further JWT/password-policy review remain future scope. These learning milestones do not certify production security.
 
 **Next session: Day 25 — Injection prevention and tests, planned for October 22, 2026.** Continue in Spanish, step by step; review validation and database queries, then agree any code changes before implementing them.
 
