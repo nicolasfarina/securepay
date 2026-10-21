@@ -1,6 +1,8 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 22 — Map SecurePay against the OWASP Top 10.
+**Current focus:** Day 23 — Broken Access Control (next session planned for October 22, 2026).
+
+Day 22 is complete as of October 21, 2026: the initial OWASP Top 10:2021 map records existing controls, evidence and open work, with a cross-reference to the 2025 edition. The real HTTP ownership test passed, and the related H2 integration suites passed all 51 tests (0 failures, 0 errors, 0 skipped). These local checks were executed by the assistant; they do not replace the learner's independent practice or PostgreSQL/operational verification. See [Day 22 mapping, results and next-session plan](docs/day22-owasp-mapping.md). Application and test code were unchanged.
 
 Day 10 is verified and merged into `main` through PR #2. See [verification evidence and reproduction steps](docs/day10-postgres-verification.md).
 
@@ -82,7 +84,7 @@ Day 21 is complete: CI and secret scanning run on PRs and active feature branche
 
 | Day | Goal |
 |---|---|
-| **Day 22** | Map SecurePay against OWASP Top 10. |
+| **Day 22 ✅** | Map SecurePay against OWASP Top 10. [Mapping and verification](docs/day22-owasp-mapping.md). |
 | **Day 23** | Broken Access Control. |
 | **Day 24** | Cryptographic Failures. |
 | **Day 25** | Injection prevention + tests. |
