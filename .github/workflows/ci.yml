@@ -95,7 +95,7 @@ jobs:
 
       - name: Run full PostgreSQL integration suite
         run: |
-          mvn -B -Duser.timezone=UTC -Dtest=ApiEndToEndTest,PaymentIdempotencyPostgresTest verify
+          mvn -B -Duser.timezone=UTC -Dtest=ApiEndToEndTest,PaymentIdempotencyPostgresTest,Day25MerchantLiteralTest verify
         env:
           SECUREPAY_POSTGRES_TEST: "true"
           SECUREPAY_TEST_POSTGRES_URL: jdbc:postgresql://localhost:5432/securepay_test
