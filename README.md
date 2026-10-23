@@ -91,8 +91,10 @@ Authenticate and create a payment with an idempotency key:
 ```shell
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"customer-123","password":"local-development-only"}'
+  -d '{"username":"customer-123","password":"<local-demo-password>"}'
 ```
+
+Replace `<local-demo-password>` with the password configured for your local demo user before running the request. Do not commit actual credentials.
 
 Use the returned `accessToken` as a Bearer token:
 
