@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM maven:3.9-eclipse-temurin-26-alpine@sha256:4c85d516dd8c7e50d49a403d604e565e0dbb09a790186fe3245725d313ae7cb9 AS build
+FROM maven:3.9-eclipse-temurin-26-noble@sha256:b2c1ad85954592f9928e84327c65201f308ad9b5d8ed7d5b823717c97bf23fbb AS build
 
 WORKDIR /workspace
 COPY pom.xml .
@@ -8,7 +8,7 @@ COPY src ./src
 COPY config ./config
 RUN --mount=type=cache,target=/root/.m2 mvn -B -Duser.timezone=UTC verify
 
-FROM eclipse-temurin:25-jre-alpine@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61 AS runtime
+FROM eclipse-temurin:25-jre-alpine-3.24@sha256:b7528962e65d43064d8a8b67ba175367896bc948363ea2d3fcd7f10d34e1f048 AS runtime
 
 LABEL org.opencontainers.image.title="SecurePay" \
       org.opencontainers.image.source="https://github.com/nicolasfarina/securepay"
