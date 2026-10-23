@@ -18,3 +18,13 @@ management:
       show-details: never
       probes:
         enabled: true
+
+securepay:
+  rate-limit:
+    max-tracked-clients: 10000
+    login:
+      max-attempts: 30
+      window: 1m
+    payments:
+      max-requests: 100
+      window: 1m

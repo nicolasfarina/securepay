@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 34 — Rate limiting, after the documentary review pass for Days 26–33 on October 23, 2026. The reviews record source evidence and learning notes; implementation and operational validation remain separate follow-up work.
+**Current focus:** Day 35 — API negative/security tests. Day 34 rate limiting was implemented and locally verified on October 23, 2026; production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
 
 Day 25 was completed as a guided learning session in Spanish on October 22, 2026. The assistant reviewed root application input and persistence paths, added focused SQL-looking input regression tests, updated the A03 evidence and CI PostgreSQL test selection, and ran `mvn -B -ntp -Duser.timezone=UTC verify` locally: 64 cases counted, 59 passed, 5 PostgreSQL-only cases skipped, no failures/errors, and SpotBugs found 0 issues. The PostgreSQL integration selection also passed locally against a new disposable PostgreSQL 18.6 container: 49 passed, no failures/errors/skips, and SpotBugs found 0 issues. PR #29 was merged to `main` (merge commit `2e55598b9a46a4ed925a37011f4c9e17da4e5e06`); CI #104 and Secret Scan #92 passed before the merge. The learner's answers and participation in the lesson are not represented as independent test execution. No production validation rules were changed because merchant, username/password and idempotency-key character policies are not specified; log sanitization is deferred because the root app has no application log consumer. See [Day 25 injection inventory and test evidence](docs/day25-injection.md).
 
@@ -102,7 +102,7 @@ This stage's Day 22–32 sequence uses OWASP Top 10:2021 categories. OWASP has s
 | **Day 31** | Security Logging & Monitoring Failures. [Documentary review](docs/day31-logging-monitoring.md); telemetry and alert implementation remains open. |
 | **Day 32** | SSRF and outbound-call controls. [Documentary review](docs/day32-ssrf.md); no outbound integration is present to test. |
 | **Day 33** | Map SecurePay against OWASP API Security Top 10. [Documentary mapping](docs/day33-api-top10.md); several future controls remain open. |
-| **Day 34** | Rate limiting for login and payment endpoints. |
+| **Day 34 ✅** | Configurable in-memory rate limits for login and payment creation. [Implementation, test evidence and limits](docs/day34-rate-limiting.md). |
 | **Day 35** | API negative/security test suite. |
 
 ---
