@@ -2,7 +2,7 @@
 
 SecurePay is a secure payment platform built as a DevSecOps and Cloud Security learning project.
 
-## Learning progress — Days 23 and 24 complete
+## Learning progress — Days 23–25 complete
 
 On **October 21, 2026**, the learner completed guided lessons in Spanish on access control and cryptographic failures, using existing tests. See [Day 23: access rules, matrix and evidence](docs/day23-access-control.md) and [Day 24: cryptography, test results and limits](docs/day24-cryptographic-failures.md).
 
@@ -13,7 +13,11 @@ On **October 21, 2026**, the learner completed guided lessons in Spanish on acce
 - Assistant validation: `mvn -B -ntp verify` passed with **61 cases counted: 56 passed, 5 PostgreSQL-only cases skipped, 0 failures/errors**, plus no SpotBugs findings. Learner-reported evidence remains separate in the lesson notes.
 - Key rotation, deployment TLS and storage/backup encryption remain operational work; merchant authorization and further JWT/password-policy review remain future scope. These learning milestones do not certify production security.
 
-**Next session: Day 25 — Injection prevention and tests, planned for October 22, 2026.** Continue in Spanish, step by step; review validation and database queries, then agree any code changes before implementing them.
+Day 25 — Injection prevention and tests — was completed on October 22, 2026. Its evidence and tests were merged through [PR #29](https://github.com/nicolasfarina/securepay/pull/29); CI #104 and Secret Scan #92 passed before merge. See [the Day 25 inventory and evidence](docs/day25-injection.md).
+
+On **October 23, 2026**, the assistant prepared documentary reviews for Days 26–33: [insecure design](docs/day26-insecure-design.md), [security configuration](docs/day27-security-misconfiguration.md), [component risks](docs/day28-vulnerable-components.md), [authentication](docs/day29-authentication.md), [integrity](docs/day30-integrity.md), [logging and monitoring](docs/day31-logging-monitoring.md), [SSRF](docs/day32-ssrf.md), and the [OWASP API Security Top 10 map](docs/day33-api-top10.md). These reviews record code evidence and learning notes; they do not represent production testing or implementation of the listed controls. The initial knowledge check showed topics to practice again.
+
+Local `mvn -B -ntp verify` on October 23 passed with **64 tests, 0 failures, 0 errors, and 5 PostgreSQL-only tests skipped**; SpotBugs reported no findings. The current documentary changes are in [PR #33](https://github.com/nicolasfarina/securepay/pull/33). The next scheduled implementation topic is Day 34, rate limiting; practical follow-ups from Days 26–33 remain open.
 
 ## Learning progress — Day 22 complete
 

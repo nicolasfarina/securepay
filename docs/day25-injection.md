@@ -2,7 +2,7 @@
 
 Date: 2026-10-22 (America/Buenos_Aires).
 
-Reviewed revision: `main` at `4f1bca825f8ba2bf210a18397b9f321eb1f2a7f6`; day 25 tests and evidence are proposed in the linked pull request. No changes are merged into `main` by this session.
+Reviewed revision: `main` at `4f1bca825f8ba2bf210a18397b9f321eb1f2a7f6`, before the Day 25 pull request was merged. Day 25 tests and evidence were delivered in [PR #29](https://github.com/nicolasfarina/securepay/pull/29), later merged to `main` as `2e55598b9a46a4ed925a37011f4c9e17da4e5e06`.
 
 ## Scope and conclusion
 
@@ -47,7 +47,7 @@ On 2026-10-22, `mvn -B -ntp -Duser.timezone=UTC verify` completed successfully o
 
 The PostgreSQL-backed CI selection was also run locally against a new disposable PostgreSQL 18.6 container, with no existing SecurePay containers or data reused: `mvn -B -ntp -Duser.timezone=UTC -Dtest=ApiEndToEndTest,PaymentIdempotencyPostgresTest,Day25MerchantLiteralTest verify` completed with **49 tests, 0 failures, 0 errors, 0 skipped; SpotBugs reported 0 findings**. The disposable container was stopped after the test.
 
-The Day 25 test is included in both the normal H2 `mvn clean verify` CI run and the PostgreSQL integration command in `.github/workflows/ci.yml`. Local H2 and PostgreSQL verification passed. GitHub Actions results remain pending on the pull request.
+The Day 25 test is included in both the normal H2 `mvn clean verify` CI run and the PostgreSQL integration command in `.github/workflows/ci.yml`. Local H2 and PostgreSQL verification passed. CI #104 and Secret Scan #92 passed on the pull request before merge.
 
 ## Boundaries and follow-up
 

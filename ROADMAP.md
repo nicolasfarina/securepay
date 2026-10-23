@@ -1,8 +1,8 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 26 — Insecure Design and business-logic abuse cases (next session planned for October 23, 2026).
+**Current focus:** Day 34 — Rate limiting, after the documentary review pass for Days 26–33 on October 23, 2026. The reviews record source evidence and learning notes; implementation and operational validation remain separate follow-up work.
 
-Day 25 was completed as a guided learning session in Spanish on October 22, 2026. The assistant reviewed root application input and persistence paths, added focused SQL-looking input regression tests, updated the A03 evidence and CI PostgreSQL test selection, and ran `mvn -B -ntp -Duser.timezone=UTC verify` locally: 64 cases counted, 59 passed, 5 PostgreSQL-only cases skipped, no failures/errors, and SpotBugs found 0 issues. The PostgreSQL integration selection also passed locally against a new disposable PostgreSQL 18.6 container: 49 passed, no failures/errors/skips, and SpotBugs found 0 issues. GitHub Actions results are pending on the Day 25 PR before merge. The learner's answers and participation in the lesson are not represented as independent test execution. No production validation rules were changed because merchant, username/password and idempotency-key character policies are not specified; log sanitization is deferred because the root app has no application log consumer. See [Day 25 injection inventory and test evidence](docs/day25-injection.md). No changes have been merged to `main` as part of this learning session.
+Day 25 was completed as a guided learning session in Spanish on October 22, 2026. The assistant reviewed root application input and persistence paths, added focused SQL-looking input regression tests, updated the A03 evidence and CI PostgreSQL test selection, and ran `mvn -B -ntp -Duser.timezone=UTC verify` locally: 64 cases counted, 59 passed, 5 PostgreSQL-only cases skipped, no failures/errors, and SpotBugs found 0 issues. The PostgreSQL integration selection also passed locally against a new disposable PostgreSQL 18.6 container: 49 passed, no failures/errors/skips, and SpotBugs found 0 issues. PR #29 was merged to `main` (merge commit `2e55598b9a46a4ed925a37011f4c9e17da4e5e06`); CI #104 and Secret Scan #92 passed before the merge. The learner's answers and participation in the lesson are not represented as independent test execution. No production validation rules were changed because merchant, username/password and idempotency-key character policies are not specified; log sanitization is deferred because the root app has no application log consumer. See [Day 25 injection inventory and test evidence](docs/day25-injection.md).
 
 Days 23 and 24 were completed as guided learning sessions in Spanish on October 21, 2026. The learner ran the existing ownership and customer/admin role tests, the JWT payload test, and the six-case invalid-token test (6 passed, no failures/errors/skips). The learner then authorized closing the application coverage gaps: 5 new HTTP cases cover the payment-read matrix for both customers, supplied foreign ownership, hidden/missing errors and a JWT altered without a new signature. Assistant verification with H2 passed `mvn -B -ntp verify`: 61 cases counted, 56 passed, 5 PostgreSQL-only cases skipped, no failures/errors or SpotBugs findings. Production logic was unchanged. Source review, learner evidence and assistant verification are distinguished in [Day 23 evidence](docs/day23-access-control.md) and [Day 24 evidence and limits](docs/day24-cryptographic-failures.md). Operational key rotation, TLS, encryption-at-rest verification and later design/hardening reviews remain open.
 
@@ -86,20 +86,22 @@ Day 21 is complete: CI and secret scanning run on PRs and active feature branche
 
 ## Stage 3 — OWASP Web & API Security
 
+This stage's Day 22–32 sequence uses OWASP Top 10:2021 categories. OWASP has since published [Top 10:2025](https://top10.owasp.org/2025/0x00_2025-Introduction/), which changes the numbering and scope: for example, A06:2021 expands into Software Supply Chain Failures, SSRF is folded into Broken Access Control, and A10 becomes Mishandling of Exceptional Conditions. The documentary reviews retain the planned 2021 labels so their evidence stays traceable; refresh the curriculum mapping before using it as a current OWASP checklist.
+
 | Day | Goal |
 |---|---|
 | **Day 22 ✅** | Map SecurePay against OWASP Top 10. [Mapping and verification](docs/day22-owasp-mapping.md). |
 | **Day 23 ✅** | Broken Access Control. [Lesson and evidence](docs/day23-access-control.md). |
 | **Day 24 ✅** | Cryptographic Failures. [Lesson and evidence](docs/day24-cryptographic-failures.md). |
 | **Day 25** | Injection prevention + tests. |
-| **Day 26** | Insecure Design and business-logic abuse cases. |
-| **Day 27** | Security Misconfiguration. |
-| **Day 28** | Vulnerable & Outdated Components. |
-| **Day 29** | Authentication Failures and token security. |
-| **Day 30** | Software & Data Integrity Failures. |
-| **Day 31** | Security Logging & Monitoring Failures. |
-| **Day 32** | SSRF and outbound-call controls. |
-| **Day 33** | Map SecurePay against OWASP API Security Top 10. |
+| **Day 26** | Insecure Design and business-logic abuse cases. [Design review and decision points](docs/day26-insecure-design.md). |
+| **Day 27** | Security Misconfiguration. [Documentary review](docs/day27-security-misconfiguration.md); runtime hardening remains open. |
+| **Day 28** | Vulnerable & Outdated Components. [Documentary review](docs/day28-vulnerable-components.md); ongoing scan and patch-response practice remains open. |
+| **Day 29** | Authentication Failures and token security. [Documentary review](docs/day29-authentication.md); production identity controls remain open. |
+| **Day 30** | Software & Data Integrity Failures. [Documentary review](docs/day30-integrity.md); provider signature and release-integrity exercises remain open. |
+| **Day 31** | Security Logging & Monitoring Failures. [Documentary review](docs/day31-logging-monitoring.md); telemetry and alert implementation remains open. |
+| **Day 32** | SSRF and outbound-call controls. [Documentary review](docs/day32-ssrf.md); no outbound integration is present to test. |
+| **Day 33** | Map SecurePay against OWASP API Security Top 10. [Documentary mapping](docs/day33-api-top10.md); several future controls remain open. |
 | **Day 34** | Rate limiting for login and payment endpoints. |
 | **Day 35** | API negative/security test suite. |
 
