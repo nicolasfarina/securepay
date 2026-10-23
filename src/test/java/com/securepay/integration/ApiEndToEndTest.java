@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Exercises the running server, security filters, validation, persistence and error dispatch. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1",
+        "securepay.rate-limit.login.max-attempts=1000",
+        "securepay.rate-limit.payments.max-requests=1000",
         "spring.datasource.url=jdbc:h2:mem:securepay_day11;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         "securepay.security.jwt-secret=" + ApiEndToEndTest.TEST_SECRET,
         "securepay.security.demo-password=" + ApiEndToEndTest.TEST_PASSWORD
