@@ -15,7 +15,9 @@ On **October 21, 2026**, the learner completed guided lessons in Spanish on acce
 
 Day 25 — Injection prevention and tests — was completed on October 22, 2026. Its evidence and tests were merged through [PR #29](https://github.com/nicolasfarina/securepay/pull/29); CI #104 and Secret Scan #92 passed before merge. See [the Day 25 inventory and evidence](docs/day25-injection.md).
 
-**Current session: Day 26 — Insecure Design and business-logic abuse cases.** See [the design review and open business decisions](docs/day26-insecure-design.md). This is a design review; no unspecified pricing, merchant, or transaction-limit policy is implemented.
+On **October 23, 2026**, the assistant prepared documentary reviews for Days 26–33: [insecure design](docs/day26-insecure-design.md), [security configuration](docs/day27-security-misconfiguration.md), [component risks](docs/day28-vulnerable-components.md), [authentication](docs/day29-authentication.md), [integrity](docs/day30-integrity.md), [logging and monitoring](docs/day31-logging-monitoring.md), [SSRF](docs/day32-ssrf.md), and the [OWASP API Security Top 10 map](docs/day33-api-top10.md). These reviews record code evidence and learning notes; they do not represent production testing or implementation of the listed controls. The initial knowledge check showed topics to practice again.
+
+Local `mvn -B -ntp verify` on October 23 passed with **64 tests, 0 failures, 0 errors, and 5 PostgreSQL-only tests skipped**; SpotBugs reported no findings. The current documentary changes are in [PR #33](https://github.com/nicolasfarina/securepay/pull/33). The next scheduled implementation topic is Day 34, rate limiting; practical follow-ups from Days 26–33 remain open.
 
 ## Learning progress — Day 22 complete
 
