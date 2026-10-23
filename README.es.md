@@ -58,7 +58,7 @@ Crear un pago con una clave de idempotencia:
 
 ```shell
 curl -X POST http://localhost:8080/api/payments \
-  -u customer-123:local-development-only \
+  -u customer-123 \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: example-payment-001" \
   -d '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
