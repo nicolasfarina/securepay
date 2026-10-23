@@ -2,7 +2,7 @@
 
 SecurePay is a secure payment platform built as a DevSecOps and Cloud Security learning project.
 
-## Learning progress — Days 23 and 24 complete
+## Learning progress — Days 23–25 complete
 
 On **October 21, 2026**, the learner completed guided lessons in Spanish on access control and cryptographic failures, using existing tests. See [Day 23: access rules, matrix and evidence](docs/day23-access-control.md) and [Day 24: cryptography, test results and limits](docs/day24-cryptographic-failures.md).
 
@@ -13,7 +13,9 @@ On **October 21, 2026**, the learner completed guided lessons in Spanish on acce
 - Assistant validation: `mvn -B -ntp verify` passed with **61 cases counted: 56 passed, 5 PostgreSQL-only cases skipped, 0 failures/errors**, plus no SpotBugs findings. Learner-reported evidence remains separate in the lesson notes.
 - Key rotation, deployment TLS and storage/backup encryption remain operational work; merchant authorization and further JWT/password-policy review remain future scope. These learning milestones do not certify production security.
 
-**Next session: Day 25 — Injection prevention and tests, planned for October 22, 2026.** Continue in Spanish, step by step; review validation and database queries, then agree any code changes before implementing them.
+Day 25 — Injection prevention and tests — was completed on October 22, 2026. Its evidence and tests were merged through [PR #29](https://github.com/nicolasfarina/securepay/pull/29); CI #104 and Secret Scan #92 passed before merge. See [the Day 25 inventory and evidence](docs/day25-injection.md).
+
+**Current session: Day 26 — Insecure Design and business-logic abuse cases.** See [the design review and open business decisions](docs/day26-insecure-design.md). This is a design review; no unspecified pricing, merchant, or transaction-limit policy is implemented.
 
 ## Learning progress — Day 22 complete
 
