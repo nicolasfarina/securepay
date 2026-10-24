@@ -13,7 +13,9 @@ FROM eclipse-temurin:25-jre-alpine-3.24@sha256:b7528962e65d43064d8a8b67ba1753678
 LABEL org.opencontainers.image.title="SecurePay" \
       org.opencontainers.image.source="https://github.com/nicolasfarina/securepay"
 
-RUN apk add --no-cache 'libexpat>=2.9.0-r0' \
+# The pinned runtime image still includes vulnerable Brotli (CVE-2026-111497).
+# Require the patched Alpine package; fail the image build if unavailable.
+RUN apk add --no-cache 'libexpat>=2.9.0-r0' 'brotli-libs>=1.2.1-r0' \
     && addgroup -S -g 10001 spring \
     && adduser -S -u 10001 -G spring spring
 WORKDIR /app
