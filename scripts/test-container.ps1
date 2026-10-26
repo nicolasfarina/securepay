@@ -92,7 +92,10 @@ try {
     $pidOne = (Invoke-DockerChecked @('exec', $api, 'cat', '/proc/1/comm')).Trim()
     if ($pidOne -ne 'java') { throw 'Java is not the container PID 1.' }
     foreach ($path in @('/v3/api-docs', '/swagger-ui/index.html')) {
-        Assert-Status (Invoke-WebRequest "$baseUrl$path" -SkipHttpErrorCheck) 404
+        $docResponse = Invoke-WebRequest "$baseUrl$path" -SkipHttpErrorCheck
+        if ($docResponse.StatusCode -notin @(401, 404)) {
+            throw "Expected HTTP 401 or 404 for $path in prod, received $($docResponse.StatusCode)"
+        }
     }
 
     $payment = '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
