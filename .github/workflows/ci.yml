@@ -9,7 +9,7 @@ on:
       - "codex/**"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -42,6 +42,9 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+
+      - name: Resolve Maven dependencies before Trivy
+        run: mvn -B dependency:resolve
 
       - name: Scan dependencies for vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
