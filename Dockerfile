@@ -8,7 +8,7 @@ COPY src ./src
 COPY config ./config
 RUN --mount=type=cache,target=/root/.m2 mvn -B -Duser.timezone=UTC verify
 
-FROM eclipse-temurin:25-jre-alpine-3.24@sha256:b7528962e65d43064d8a8b67ba175367896bc948363ea2d3fcd7f10d34e1f048 AS runtime
+FROM eclipse-temurin:27-jre-alpine-3.24@sha256:0faf24c1d1e778bbc0700fc71c53b081c9432f1e51e6e41c86c63840e8b89ac1 AS runtime
 
 LABEL org.opencontainers.image.title="SecurePay" \
       org.opencontainers.image.source="https://github.com/nicolasfarina/securepay"
