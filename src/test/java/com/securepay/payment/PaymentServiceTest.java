@@ -1,5 +1,6 @@
 package com.securepay.payment;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ class PaymentServiceTest {
 
     @Autowired
     private IdempotencyRecordRepository idempotencyRecordRepository;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     void clearDatabase() {
@@ -50,12 +54,18 @@ class PaymentServiceTest {
     @Test
     void allowsOnlyControlledPaymentTransitions() {
         Payment payment = paymentService.create(paymentRequest("10.00"), "customer-123", "key-1");
+        double countBefore = meterRegistry.counter(PaymentMetrics.TRANSITIONS,
+                "from", "PENDING", "to", "APPROVED").count();
 
         Payment approved = paymentService.transition(payment.id(), PaymentStatus.APPROVED);
 
         assertThat(approved.status()).isEqualTo(PaymentStatus.APPROVED);
+        assertThat(meterRegistry.counter(PaymentMetrics.TRANSITIONS,
+                "from", "PENDING", "to", "APPROVED").count()).isEqualTo(countBefore + 1);
         assertThatThrownBy(() -> paymentService.transition(payment.id(), PaymentStatus.REJECTED))
                 .isInstanceOf(IllegalStateException.class);
+        assertThat(meterRegistry.counter(PaymentMetrics.TRANSITIONS,
+                "from", "APPROVED", "to", "REJECTED").count()).isZero();
     }
 
     private CreatePaymentRequest paymentRequest(String amount) {
