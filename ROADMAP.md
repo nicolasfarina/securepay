@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 35 — API negative/security tests. Day 34 rate limiting was implemented and locally verified on October 23, 2026; production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
+**Current focus:** Day 42 — actionable alerting. Days 36–40 are implemented on the current local feature branch; Day 41 defines proposed objectives and telemetry gaps. Day 41's proposed objectives are not production commitments; they need representative measurements and operator approval. Day 34 production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
 
 Day 25 was completed as a guided learning session in Spanish on October 22, 2026. The assistant reviewed root application input and persistence paths, added focused SQL-looking input regression tests, updated the A03 evidence and CI PostgreSQL test selection, and ran `mvn -B -ntp -Duser.timezone=UTC verify` locally: 64 cases counted, 59 passed, 5 PostgreSQL-only cases skipped, no failures/errors, and SpotBugs found 0 issues. The PostgreSQL integration selection also passed locally against a new disposable PostgreSQL 18.6 container: 49 passed, no failures/errors/skips, and SpotBugs found 0 issues. PR #29 was merged to `main` (merge commit `2e55598b9a46a4ed925a37011f4c9e17da4e5e06`); CI #104 and Secret Scan #92 passed before the merge. The learner's answers and participation in the lesson are not represented as independent test execution. No production validation rules were changed because merchant, username/password and idempotency-key character policies are not specified; log sanitization is deferred because the root app has no application log consumer. See [Day 25 injection inventory and test evidence](docs/day25-injection.md).
 
@@ -111,12 +111,12 @@ This stage's Day 22–32 sequence uses OWASP Top 10:2021 categories. OWASP has s
 
 | Day | Goal |
 |---|---|
-| **Day 36** | Structured logging + Correlation ID. |
-| **Day 37** | Metrics with Micrometer. |
-| **Day 38** | OpenTelemetry fundamentals. |
-| **Day 39** | Distributed Tracing. |
-| **Day 40** | Proper liveness/readiness strategy. |
-| **Day 41** | Define SLIs and SLOs. |
+| **Day 36 ✅** | Structured logging + Correlation ID. [Implementation and evidence](docs/day36-structured-logging.md). |
+| **Day 37 ✅** | Micrometer payment transition metrics, protected Actuator endpoint, and PostgreSQL-backed verification. [Implementation and evidence](docs/day37-metrics.md). |
+| **Day 38 ✅** | OpenTelemetry fundamentals and manual payment-creation span. [Implementation and evidence](docs/day38-opentelemetry-fundamentals.md). |
+| **Day 39 ✅** | Distributed tracing configuration and W3C context propagation for outgoing `RestClient` calls. [Implementation and evidence](docs/day39-distributed-tracing.md). |
+| **Day 40 ✅** | Liveness stays independent of PostgreSQL; readiness and the Compose health check include PostgreSQL availability. [Implementation and evidence](docs/day40-health-probes.md). |
+| **Day 41 ✅** | Propose payment API availability and latency indicators/objectives, document measurement definitions and identify telemetry gaps. [Definitions and limits](docs/day41-sli-slo.md). |
 | **Day 42** | Actionable alerting. |
 | **Day 43** | Simulate dependency failures. |
 | **Day 44** | Timeout + Retry + Circuit Breaker + Bulkhead. |
