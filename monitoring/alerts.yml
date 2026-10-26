@@ -1,0 +1,33 @@
+groups:
+  - name: securepay-lab
+    rules:
+      - alert: SecurePayScrapeFailed
+        expr: up{job="securepay"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus cannot scrape SecurePay"
+          action: "Check the API, network, and scraper authentication before diagnosing availability."
+      - alert: SecurePayHighServerErrorRate
+        expr: |
+          (sum(rate(http_server_requests_seconds_count{uri=~"/api/payments(/.*)?",status=~"5.."}[5m]))
+          / sum(rate(http_server_requests_seconds_count{uri=~"/api/payments(/.*)?"}[5m]))) > 0.05
+          and sum(increase(http_server_requests_seconds_count{uri=~"/api/payments(/.*)?"}[5m])) >= 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment API 5xx rate is above 5%"
+          action: "Inspect application errors and dependencies; compare with request volume."
+      - alert: SecurePaySlowPayments
+        expr: |
+          (sum(rate(http_server_requests_seconds_bucket{uri=~"/api/payments(/.*)?",status=~"2..",le="0.5"}[5m]))
+          / sum(rate(http_server_requests_seconds_count{uri=~"/api/payments(/.*)?",status=~"2.."}[5m]))) < 0.95
+          and sum(increase(http_server_requests_seconds_count{uri=~"/api/payments(/.*)?",status=~"2.."}[5m])) >= 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Less than 95% of successful payment requests completed within 500 ms"
+          action: "Inspect latency and database health; compare with request volume."

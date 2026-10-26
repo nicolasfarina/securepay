@@ -18,6 +18,8 @@ Autenticación responde «quién sos»; autorización decide «qué podés hacer
 
 ## Riesgos y límites
 
+**Actualización 2026-10-26:** el [Día 34](day34-rate-limiting.md) agregó límites en memoria para login y creación de pagos; la frase siguiente describe el momento de la revisión original. Los límites, el proxy de confianza y el uso con múltiples réplicas aún requieren decisiones y pruebas operativas.
+
 El perfil local tiene credenciales de demostración predeterminadas. No hay limitación de intentos en login, MFA, ciclo de recuperación de cuenta, rotación administrada de claves ni revocación anticipada de tokens. La ausencia de esos controles es relevante para producción, aunque las cuentas son de demostración y no existe un servicio de identidad persistente.
 
 La implementación JWT es propia y pequeña; las pruebas actuales no sustituyen una revisión de protocolo y biblioteca. No afirmamos que SecurePay sea apto para autenticar clientes reales.

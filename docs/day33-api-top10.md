@@ -4,6 +4,8 @@ Fecha: 2026-10-23 (America/Buenos_Aires).
 
 Este mapeo usa la edición OWASP API Security Top 10 2023. Es una revisión del código y de pruebas existentes; no es una certificación ni una prueba de penetración.
 
+**Actualización 2026-10-26:** la tabla conserva la fotografía del 23/10. El [Día 34](day34-rate-limiting.md) agregó límites en memoria para login y creación de pagos; siguen abiertos los límites de negocio, la configuración de proxies confiables y la coordinación entre réplicas.
+
 ## Mapeo de riesgos
 
 | Riesgo OWASP API 2023 | Evidencia actual | Estado de revisión |

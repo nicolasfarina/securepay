@@ -5,7 +5,7 @@ Fecha: 2026-10-26 (America/Buenos_Aires).
 ## Implementación y contrato
 
 Base inspeccionada: `16f5f8b` de `nicolasfarina/securepay`, con Día 35 integrado.
-Trabajo local en `codex/day36-correlation-id`. No se creó un PR ni se publicó la rama.
+Implementado en `codex/day36-correlation-id` y fusionado en `main` mediante el [PR #40](https://github.com/nicolasfarina/securepay/pull/40).
 
 - `CorrelationIdFilter` se registra una sola vez como filtro servlet, antes de Spring Security,
   para cubrir también respuestas tempranas de autenticación y rate limiting.
