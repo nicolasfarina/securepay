@@ -18,6 +18,8 @@ El mínimo de solicitudes evita alertas de proporciones con muestras pequeñas, 
 
 La interfaz de Prometheus muestra alertas en estado pendiente o activo. No se configuraron Alertmanager, notificaciones, destinatarios, guardias ni retención duradera; por eso este laboratorio no entrega alertas a un operador.
 
+En un experimento separado y temporal se detuvo la API: Prometheus activó `SecurePayScrapeFailed` y Alertmanager entregó el evento `firing` a un receptor HTTP local. No se notificó a ninguna persona ni servicio externo. Trivy 0.76.1 detectó vulnerabilidades HIGH con corrección disponible en las imágenes ensayadas de Alertmanager 0.34.1 y Python 3.14-alpine. Por ese motivo el experimento no forma parte del Compose entregado; hay que elegir imágenes corregidas y repetir la verificación antes de integrarlo.
+
 ## Práctica reproducible
 
 Con PowerShell 7, Docker Desktop y el motor Docker funcionando:
