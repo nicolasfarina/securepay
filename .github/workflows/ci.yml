@@ -100,6 +100,35 @@ jobs:
           exit-code: "1"
           format: table
 
+      - name: Build local alert delivery images
+        run: |
+          docker build -f monitoring/alertmanager/Dockerfile -t securepay-alertmanager:ci .
+          docker build -f monitoring/alert-receiver/Dockerfile -t securepay-alert-receiver:ci .
+
+      - name: Scan local Alertmanager image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.1'
+          scan-type: image
+          scan-ref: securepay-alertmanager:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Scan local alert receiver image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.1'
+          scan-type: image
+          scan-ref: securepay-alert-receiver:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
       - name: Generate container image SBOM
         if: always() && steps.build-image.outcome == 'success'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0

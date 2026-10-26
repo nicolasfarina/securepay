@@ -16,9 +16,9 @@ El archivo [alerts.yml](../monitoring/alerts.yml) define:
 
 El mínimo de solicitudes evita alertas de proporciones con muestras pequeñas, pero también significa que **no** se alertará por estos porcentajes con tráfico bajo. La caída del proceso se observa mediante el scrape fallido; si se elimina el target de la configuración, `up` deja de existir y esta regla no lo detecta. Las métricas HTTP no incluyen fallos que ocurran antes de llegar a la aplicación. Cada alerta incluye una primera acción, no un diagnóstico definitivo.
 
-La interfaz de Prometheus muestra alertas en estado pendiente o activo. No se configuraron Alertmanager, notificaciones, destinatarios, guardias ni retención duradera; por eso este laboratorio no entrega alertas a un operador.
+La interfaz de Prometheus muestra alertas en estado pendiente o activo y las envía a Alertmanager, que las entrega a un receptor HTTP local de prueba. El receptor conserva solo nombre y estado en memoria y su puerto está limitado a loopback. No hay destinatarios, guardias ni notificaciones a personas o servicios externos.
 
-En un experimento separado y temporal se detuvo la API: Prometheus activó `SecurePayScrapeFailed` y Alertmanager entregó el evento `firing` a un receptor HTTP local. No se notificó a ninguna persona ni servicio externo. Trivy 0.76.1 detectó vulnerabilidades HIGH con corrección disponible en las imágenes ensayadas de Alertmanager 0.34.1 y Python 3.14-alpine. Por ese motivo el experimento no forma parte del Compose entregado; hay que elegir imágenes corregidas y repetir la verificación antes de integrarlo.
+Las imágenes oficiales de Alertmanager 0.34.1 y Python 3.14-alpine ensayadas inicialmente presentaron hallazgos HIGH corregibles en Trivy. El laboratorio ahora compila Alertmanager desde su código fuente fijado, con Go 1.27.3 y dependencias actualizadas y fijadas en `monitoring/alertmanager/go.mod` y `go.sum`; usa un receptor mínimo en Go en lugar de la imagen Python. La compilación es solo para el laboratorio: sustituye la interfaz web de Alertmanager por una página mínima y no incluye certificados de confianza para conexiones TLS externas.
 
 ## Práctica reproducible
 
@@ -29,7 +29,7 @@ pwsh -NoProfile -File .\scripts\test-monitoring.ps1
 docker run --rm --mount "type=bind,source=$((Get-Location).Path)\monitoring,target=/rules,readonly" --entrypoint /bin/promtool prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2 test rules /rules/alerts-test.yml
 ```
 
-El script crea un proyecto Compose con nombre único, credenciales temporales y puertos aleatorios en loopback; obtiene un token de administrador para el scraper y comprueba el resultado `up=1`. Al terminar elimina su proyecto, volumen de base y archivo temporal del token. No inicia ni detiene proyectos Compose existentes. El token demo vence según la configuración JWT, por lo que una sesión de monitoreo prolongada requiere renovación segura.
+El script crea un proyecto Compose con nombre único, credenciales temporales y puertos aleatorios en loopback; obtiene un token de administrador para el scraper y comprueba el resultado `up=1` y el bucket de 500 ms. Luego detiene solo la API de ese proyecto y espera la entrega de `SecurePayScrapeFailed` al receptor local. Al terminar elimina sus contenedores, imágenes de prueba, volumen de base y archivo temporal del token. No inicia ni detiene proyectos Compose existentes. El token demo vence según la configuración JWT, por lo que una sesión de monitoreo prolongada requiere renovación segura.
 
 Las pruebas de `promtool` usan series simuladas: comprueban que las tres alertas se activen y que no se activen con scrape sano y poco tráfico. No demuestran envío de notificaciones ni reproducen una carga real.
 
@@ -37,10 +37,12 @@ Las pruebas de `promtool` usan series simuladas: comprueban que las tres alertas
 
 - `mvn -B -ntp verify`: 122 casos contabilizados, 0 fallos, 0 errores y 5 omitidos por requerir PostgreSQL; SpotBugs sin hallazgos. Las pruebas nuevas verifican el control de acceso, la exposición por perfil y el bucket de latencia.
 - `scripts/test-monitoring.ps1`: Prometheus 3.15.1 consultó el endpoint autenticado de la API y recibió un bucket de 500 ms en un proyecto Docker temporal con PostgreSQL.
+- Tras detener la API de ese proyecto, `SecurePayScrapeFailed` pasó a `firing` y Alertmanager entregó la alerta al receptor local; el script terminó correctamente y eliminó los recursos temporales.
 - `promtool test rules`: los escenarios simulados pasaron para las tres alertas.
 - Trivy 0.76.1 sobre la imagen fijada de Prometheus 3.15.1: 0 hallazgos HIGH/CRITICAL con corrección disponible, según la base del escaneo. La imagen 3.5.0 inicialmente probada presentó hallazgos y se sustituyó.
+- Trivy 0.76.1 sobre las imágenes reconstruidas de Alertmanager y del receptor: 0 hallazgos HIGH/CRITICAL con corrección disponible según la base utilizada. El escaneo no garantiza ausencia de otros riesgos.
 
-Se agregaron pasos de CI para validar las reglas y escanear la imagen de monitoreo. La nueva configuración de CI se validará en GitHub cuando se proponga este cambio mediante PR.
+Se agregaron pasos de CI para validar las reglas, construir y escanear las imágenes de monitoreo. La nueva configuración de CI se validará en GitHub cuando se proponga este cambio mediante PR.
 
 ## Antes de producción
 

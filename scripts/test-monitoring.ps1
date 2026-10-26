@@ -6,7 +6,7 @@ $project = "securepay-monitoring-$suffix"
 $image = "securepay:monitoring-$suffix"
 $tempDir = Join-Path ([IO.Path]::GetTempPath()) $project
 $tokenFile = Join-Path $tempDir 'token'
-$names = @('SECUREPAY_API_PORT', 'SECUREPAY_PROMETHEUS_PORT', 'SECUREPAY_IMAGE',
+$names = @('SECUREPAY_API_PORT', 'SECUREPAY_PROMETHEUS_PORT', 'SECUREPAY_RECEIVER_PORT', 'SECUREPAY_IMAGE',
     'SECUREPAY_DATABASE_PASSWORD', 'SECUREPAY_DEMO_PASSWORD', 'SECUREPAY_JWT_SECRET',
     'SECUREPAY_PROMETHEUS_TOKEN_FILE')
 $previous = @{}
@@ -27,6 +27,7 @@ try {
     [IO.File]::WriteAllText($tokenFile, '')
     $env:SECUREPAY_API_PORT = '0'
     $env:SECUREPAY_PROMETHEUS_PORT = '0'
+    $env:SECUREPAY_RECEIVER_PORT = '0'
     $env:SECUREPAY_IMAGE = $image
     $env:SECUREPAY_DATABASE_PASSWORD = [guid]::NewGuid().ToString('N')
     $env:SECUREPAY_DEMO_PASSWORD = [guid]::NewGuid().ToString('N')
@@ -52,8 +53,9 @@ try {
         $login = Invoke-RestMethod "$baseUrl/auth/login" -Method Post -ContentType 'application/json' -Body $loginBody
         if ([string]::IsNullOrWhiteSpace($login.accessToken)) { throw 'No scrape token returned.' }
         [IO.File]::WriteAllText($tokenFile, $login.accessToken)
-        Invoke-Compose @('up', '-d', 'prometheus') | Out-Null
+        Invoke-Compose @('up', '-d', '--build', 'prometheus') | Out-Null
         $promPort = Get-LocalPort 'prometheus' '9090'
+        $receiverPort = Get-LocalPort 'alert-receiver' '8080'
         $scrapeOk = $false
         for ($i = 0; $i -lt 90; $i++) {
             try {
@@ -72,8 +74,21 @@ try {
         }
         Write-Host 'Prometheus successfully scraped the authenticated SecurePay endpoint.'
         Write-Host 'Prometheus received the 500 ms HTTP latency bucket.'
+        Invoke-Compose @('stop', 'api') | Out-Null
+        $received = $false
+        for ($i = 0; $i -lt 240; $i += 3) {
+            try {
+                $events = @(Invoke-RestMethod "http://127.0.0.1:$receiverPort/received" -TimeoutSec 2)
+                if ($events | Where-Object { $_.name -eq 'SecurePayScrapeFailed' -and $_.status -eq 'firing' }) {
+                    $received = $true; break
+                }
+            } catch { }
+            Start-Sleep -Seconds 3
+        }
+        if (-not $received) { throw 'The local receiver did not receive the scrape-failure alert.' }
+        Write-Host 'Alertmanager delivered the firing scrape-failure alert to the local receiver.'
     } finally {
-        if ($started) { Invoke-Compose @('down', '--volumes', '--remove-orphans') | Out-Null }
+        if ($started) { Invoke-Compose @('down', '--volumes', '--remove-orphans', '--rmi', 'local') | Out-Null }
         Pop-Location
     }
 } finally {
