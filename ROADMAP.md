@@ -1,6 +1,8 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 35 — API negative/security tests. Day 34 rate limiting was implemented and locally verified on October 23, 2026; production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
+**Current focus:** Day 36 — Structured logging + Correlation ID, planned for October 25, 2026 (not started). Day 35 API negative/security tests were completed and merged on October 24, 2026. Day 34 rate limiting was implemented and locally verified on October 23, 2026; production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
+
+Day 35 was completed on October 24, 2026. PR #36 introduced six HTTP negative-security cases for untrusted forwarding headers, spoofed identity headers, and invalid Authorization schemes; PR #36 was merged into the Brotli-fix branch and then reached main through PR #35 (main commit `16f5f8b6b85356d25cbc474b6075ff4219882a15`). GitHub Actions [main CI #40109195344](https://github.com/nicolasfarina/securepay/actions/runs/40109195344) passed after the merge, including container and dependency Trivy scans, Maven verify (74 counted, 69 passed and 5 PostgreSQL-only cases skipped), PostgreSQL selection (49 passed, 0 skipped), and SpotBugs. The six `ApiNegativeSecurityTest` cases all passed. Secret Scan and container publishing also passed on the same main commit. This validates the observed tests and CI but not production reverse-proxy trust settings or all possible API attacks. See [Day 35 evidence and limitations](docs/day35-api-negative-tests.md).
 
 Day 25 was completed as a guided learning session in Spanish on October 22, 2026. The assistant reviewed root application input and persistence paths, added focused SQL-looking input regression tests, updated the A03 evidence and CI PostgreSQL test selection, and ran `mvn -B -ntp -Duser.timezone=UTC verify` locally: 64 cases counted, 59 passed, 5 PostgreSQL-only cases skipped, no failures/errors, and SpotBugs found 0 issues. The PostgreSQL integration selection also passed locally against a new disposable PostgreSQL 18.6 container: 49 passed, no failures/errors/skips, and SpotBugs found 0 issues. PR #29 was merged to `main` (merge commit `2e55598b9a46a4ed925a37011f4c9e17da4e5e06`); CI #104 and Secret Scan #92 passed before the merge. The learner's answers and participation in the lesson are not represented as independent test execution. No production validation rules were changed because merchant, username/password and idempotency-key character policies are not specified; log sanitization is deferred because the root app has no application log consumer. See [Day 25 injection inventory and test evidence](docs/day25-injection.md).
 
@@ -103,7 +105,7 @@ This stage's Day 22–32 sequence uses OWASP Top 10:2021 categories. OWASP has s
 | **Day 32** | SSRF and outbound-call controls. [Documentary review](docs/day32-ssrf.md); no outbound integration is present to test. |
 | **Day 33** | Map SecurePay against OWASP API Security Top 10. [Documentary mapping](docs/day33-api-top10.md); several future controls remain open. |
 | **Day 34 ✅** | Configurable in-memory rate limits for login and payment creation. [Implementation, test evidence and limits](docs/day34-rate-limiting.md). |
-| **Day 35** | API negative/security test suite. |
+| **Day 35 ✅** | API negative/security test suite. [Implemented and verified on main](docs/day35-api-negative-tests.md). |
 
 ---
 
