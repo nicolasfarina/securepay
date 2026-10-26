@@ -8,11 +8,28 @@ server:
   error:
     include-message: never
 
+logging:
+  structured:
+    format:
+      console: logstash
+
 management:
+  tracing:
+    sampling:
+      probability: ${SECUREPAY_TRACING_SAMPLING_PROBABILITY:0.1}
+    propagation:
+      type: W3C
+  opentelemetry:
+    resource-attributes:
+      "service.name": securepay
+    tracing:
+      export:
+        otlp:
+          enabled: ${SECUREPAY_TRACING_OTLP_ENABLED:false}
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,metrics
   endpoint:
     health:
       show-details: never

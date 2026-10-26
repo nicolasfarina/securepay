@@ -44,6 +44,10 @@ try {
 
     New-Item -ItemType Directory -Force 'target/day11-evidence' | Out-Null
     Write-Host 'Running the complete suite, including real HTTP and PostgreSQL concurrency tests.'
+    # Maven may write non-fatal JVM/Mockito warnings to stderr. PowerShell's Stop
+    # preference must not turn those warnings into an early termination; use Maven's
+    # exit code below to decide whether verification failed.
+    $ErrorActionPreference = 'Continue'
     & mvn -B '-Duser.timezone=UTC' verify 2>&1 | Tee-Object -FilePath 'target/day11-evidence/postgres-verify.log'
     if ($LASTEXITCODE -ne 0) { throw 'Integration verification failed. See target/day11-evidence/postgres-verify.log.' }
 }
