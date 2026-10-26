@@ -18,6 +18,8 @@ rutas `/actuator/metrics` requieren rol ADMIN; los usuarios sin JWT reciben 401 
 usuarios CUSTOMER reciben 403. El exporter Prometheus no se agregó: primero hace falta
 definir el scraper y el acceso de red de producción.
 
+Actualización de laboratorio: el [Día 42](day42-actionable-alerting.md) agrega un exporter protegido y un scraper local optativo. La identidad del scraper y el acceso de red de producción siguen por definir.
+
 ## Verificación
 
 - `PaymentMetricsTest` verifica el conteo y las únicas etiquetas de la métrica.

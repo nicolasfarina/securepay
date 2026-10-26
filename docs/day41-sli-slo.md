@@ -21,6 +21,8 @@ La disponibilidad se mide por solicitudes y no por minutos de uptime. Por eso su
 
 ## Brechas antes de tratar los SLO como operativos
 
+El [laboratorio del Día 42](day42-actionable-alerting.md) prueba un backend efímero y un bucket de 500 ms. Las brechas descritas aquí siguen abiertas para un despliegue operativo y una ventana de 30 días.
+
 1. **No hay backend de métricas configurado.** El endpoint `/actuator/metrics` sirve para diagnóstico puntual, está protegido por rol ADMIN y consulta el registro en memoria del proceso. No conserva una ventana móvil de 30 días y Spring Boot indica que este endpoint no debe usarse para scraping de producción.
 2. **Falta distribución de latencias.** El temporizador HTTP aún no tiene histograma ni límites SLO configurados. Sin buckets exportados no podemos calcular de forma agregable el porcentaje de solicitudes bajo 500 ms.
 3. **Faltan fallos fuera del proceso.** Si el proceso está caído o la conexión no llega a Spring, `http.server.requests` no registra la solicitud. Haría falta una sonda sintética externa o telemetría del balanceador para contar esos fallos.

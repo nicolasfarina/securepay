@@ -54,7 +54,7 @@ public class SecurityConfig {
                             .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                             .requestMatchers("/auth/login").permitAll()
                             .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                            .requestMatchers("/actuator/metrics", "/actuator/metrics/**").hasRole("ADMIN");
+                            .requestMatchers("/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus").hasRole("ADMIN");
                     if (swaggerUiEnabled) {
                         authorize.requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll();
                     }

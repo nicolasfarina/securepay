@@ -82,6 +82,24 @@ jobs:
           exit-code: "1"
           format: table
 
+      - name: Validate alert rules
+        run: >-
+          docker run --rm -v "$PWD/monitoring:/rules:ro" --entrypoint /bin/promtool
+          prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
+          test rules /rules/alerts-test.yml
+
+      - name: Scan monitoring image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.1'
+          scan-type: image
+          scan-ref: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
       - name: Generate container image SBOM
         if: always() && steps.build-image.outcome == 'success'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0

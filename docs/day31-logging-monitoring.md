@@ -18,6 +18,8 @@ Un log sirve para reconstruir qué ocurrió; una métrica muestra tendencias; un
 
 ## Evaluación y límites
 
+**Actualización 2026-10-26:** los [Días 36–39](day36-structured-logging.md) agregaron logs estructurados, Correlation ID, métricas y trazas. No son una auditoría completa de eventos de seguridad ni cierran los requisitos de retención, acceso y alertas; los párrafos de evidencia anteriores describen la revisión del 23/10.
+
 La capacidad actual no permite atribuir intentos fallidos a una identidad con seguridad, detectar patrones de abuso ni demostrar quién ejecutó una acción administrativa. PAY-06 sigue siendo un riesgo abierto. El health check sirve para disponibilidad básica, no para detección de fraude o seguridad.
 
 ## Práctica pendiente

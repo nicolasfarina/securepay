@@ -24,6 +24,8 @@ Hay inventario automatizado, escaneo y actualización periódica configurados. E
 
 Para aprender el ciclo completo: abrir el artefacto SBOM de una ejecución, localizar una dependencia directa y una transitiva, comparar el resultado de Trivy con el SBOM, revisar un aviso concreto y justificar «actualizar», «mitigar» o «aceptar temporalmente». No actualizar automáticamente sin ejecutar las pruebas.
 
+**Actualización 2026-10-26:** se fusionaron los PR de Dependabot [#38](https://github.com/nicolasfarina/securepay/pull/38) y [#39](https://github.com/nicolasfarina/securepay/pull/39). La [CI posterior en main](https://github.com/nicolasfarina/securepay/actions/runs/40382369278) terminó correctamente. Esto no reemplaza el análisis de un aviso concreto ni garantiza ausencia de vulnerabilidades.
+
 ## Fuentes
 
 - [OWASP A06:2021 — Vulnerable and Outdated Components](https://owasp.org/Top10/en/A06_2021-Vulnerable_and_Outdated_Components/)

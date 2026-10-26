@@ -26,6 +26,8 @@ Compose es una ayuda local, no una política de producción. El perfil `postgres
 
 Antes de producción, declarar explícitamente el perfil de producción, verificar que no se acepten valores demo, comprobar TLS en el borde, revisar cabeceras HTTP y probar que Swagger esté deshabilitado. La prueba debe inspeccionar la instancia iniciada, no solo el archivo YAML.
 
+**Actualización 2026-10-26:** [PR #41](https://github.com/nicolasfarina/securepay/pull/41) incorporó la restricción de seguridad de Swagger y pruebas con el perfil `prod`, incluyendo solicitudes anónimas y autenticadas. La selección del perfil, TLS y cabeceras en una instancia desplegada siguen pendientes de verificación.
+
 ## Fuentes
 
 - [OWASP A05:2021 — Security Misconfiguration](https://owasp.org/Top10/en/A05_2021-Security_Misconfiguration/)

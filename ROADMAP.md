@@ -1,6 +1,6 @@
 # SecurePay — 90 Day DevSecOps & Cloud Security Roadmap
 
-**Current focus:** Day 42 — actionable alerting. Days 36–40 are implemented on the current feature branch; Day 41 defines proposed objectives and telemetry gaps. Day 41's proposed objectives are not production commitments; they need representative measurements and operator approval. Day 35 API negative/security tests were completed and merged on October 24, 2026. Day 34 production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
+**Current focus:** Day 42 — actionable alerting. Days 36–41 are on main via [PR #40](https://github.com/nicolasfarina/securepay/pull/40); Day 41 defines proposed objectives and telemetry gaps. Those objectives are not production commitments; they need representative measurements and operator approval. Day 35 API negative/security tests were completed and merged on October 24, 2026. Day 34 production thresholds, trusted proxy configuration and shared counters for multiple replicas remain open operational work. The documentary review pass for Days 26–33 is merged, while practical follow-ups remain open.
 
 Day 35 was completed on October 24, 2026. PR #36 introduced six HTTP negative-security cases for untrusted forwarding headers, spoofed identity headers, and invalid Authorization schemes; PR #36 was merged into the Brotli-fix branch and then reached main through PR #35 (main commit `16f5f8b6b85356d25cbc474b6075ff4219882a15`). GitHub Actions [main CI #40109195344](https://github.com/nicolasfarina/securepay/actions/runs/40109195344) passed after the merge, including container and dependency Trivy scans, Maven verify (74 counted, 69 passed and 5 PostgreSQL-only cases skipped), PostgreSQL selection (49 passed, 0 skipped), and SpotBugs. The six `ApiNegativeSecurityTest` cases all passed. Secret Scan and container publishing also passed on the same main commit. This validates the observed tests and CI but not production reverse-proxy trust settings or all possible API attacks. See [Day 35 evidence and limitations](docs/day35-api-negative-tests.md).
 
@@ -119,7 +119,7 @@ This stage's Day 22–32 sequence uses OWASP Top 10:2021 categories. OWASP has s
 | **Day 39 ✅** | Distributed tracing configuration and W3C context propagation for outgoing `RestClient` calls. [Implementation and evidence](docs/day39-distributed-tracing.md). |
 | **Day 40 ✅** | Liveness stays independent of PostgreSQL; readiness and the Compose health check include PostgreSQL availability. [Implementation and evidence](docs/day40-health-probes.md). |
 | **Day 41 ✅** | Propose payment API availability and latency indicators/objectives, document measurement definitions and identify telemetry gaps. [Definitions and limits](docs/day41-sli-slo.md). |
-| **Day 42** | Actionable alerting. |
+| **Day 42** | Actionable alerting. Local lab and evidence: [alert rules, authenticated scraping and remaining notification work](docs/day42-actionable-alerting.md). |
 | **Day 43** | Simulate dependency failures. |
 | **Day 44** | Timeout + Retry + Circuit Breaker + Bulkhead. |
 | **Day 45** | Operational dashboard + incident-response documentation. |
