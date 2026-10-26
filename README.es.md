@@ -1,6 +1,14 @@
 # SecurePay
 
-SecurePay es una plataforma de pagos segura creada como proyecto de aprendizaje de DevSecOps y Seguridad en la Nube.
+SecurePay es una plataforma de pagos segura creada como proyecto de aprendizaje e ingeniería de referencia en DevSecOps y Seguridad en la Nube.
+
+## Progreso técnico — Días 22 a 41 completados
+
+- **Días 22–25 (OWASP Top 10, Control de Acceso, Criptografía e Inyección):** Mapeo completo de OWASP Top 10:2021 (con referencia a 2025), matriz de autorización HTTP (`401` sin autenticar, `403` rol insuficiente, `404` sobre pagos de otro cliente para evitar enumeración, `200` para el titular), validación de firma JWT HS256 ante alteración de payload y pruebas de parametrización SQL frente a literales maliciosos. Ver [Día 22](docs/day22-owasp-mapping.md), [Día 23](docs/day23-access-control.md), [Día 24](docs/day24-cryptographic-failures.md) y [Día 25](docs/day25-injection.md).
+- **Días 26–33 (Revisiones de Diseño y OWASP API Security Top 10):** Revisiones documentales con evidencia en código sobre [diseño inseguro](docs/day26-insecure-design.md), [configuración de seguridad](docs/day27-security-misconfiguration.md), [riesgo de componentes](docs/day28-vulnerable-components.md), [autenticación](docs/day29-authentication.md), [integridad](docs/day30-integrity.md), [logging y monitoreo](docs/day31-logging-monitoring.md), [SSRF](docs/day32-ssrf.md) y [OWASP API Security Top 10](docs/day33-api-top10.md).
+- **Días 34–35 (Rate Limiting y Pruebas Negativas de Seguridad HTTP):** Implementación de limitación de tasa con *token bucket* configurable por IP en `/auth/login` y por cliente autenticado en `/api/payments` (`429 Too Many Requests` con `Retry-After`), más suite de pruebas negativas frente a spoofing de `X-Forwarded-For`, cabeceras de identidad falsificadas (`X-Role`, `X-Authenticated-User`) y esquemas de autorización no soportados. Ver [Día 34](docs/day34-rate-limiting.md) y [Día 35](docs/day35-api-negative-security-tests.md).
+- **Días 36–41 (Observabilidad, OpenTelemetry, Resiliencia y SLOs):** Logs estructurados en JSON con validación de `X-Correlation-Id` y propagación MDC, métricas Micrometer de transiciones de pago restringidas al rol `ADMIN`, spans manuales con OpenTelemetry SDK, propagación W3C Trace Context en `RestClient` y ejecutores asíncronos, verificación de *readiness/liveness* ante caída y recuperación de PostgreSQL 18.6, y definición de SLIs/SLOs ([Día 36](docs/day36-structured-logging.md), [Día 37](docs/day37-metrics.md), [Día 38](docs/day38-opentelemetry-fundamentals.md), [Día 39](docs/day39-distributed-tracing.md), [Día 40](docs/day40-health-probes.md) y [Día 41](docs/day41-sli-slo.md)).
+- **Verificación automatizada:** `scripts/test-integration.ps1` aprueba con **115+ pruebas automatizadas (0 fallos, 0 errores)** incluyendo pruebas reales sobre PostgreSQL 18.6 y Tomcat, más análisis estático con SpotBugs/FindSecBugs sin hallazgos.
 
 ## Objetivo
 
@@ -11,11 +19,11 @@ El objetivo de SecurePay es crear una plataforma de pagos segura, observable y e
 - Pagos con tarjeta de crédito
 - Procesamiento seguro de pagos
 - Gestión de estados de pago
-- Solicitudes de pago idempotentes
-- Autenticación y autorización
-- Observabilidad
-- Infraestructura en la nube
-- Controles de seguridad DevSecOps
+- Solicitudes de pago idempotentes (`Idempotency-Key` + huella SHA-256)
+- Autenticación con Bearer JWT firmado (HS256) y autorización por rol y titularidad
+- Rate limiting en autenticación y creación de pagos
+- Observabilidad (JSON logs, Correlation ID, Micrometer y OpenTelemetry)
+- Controles de seguridad DevSecOps en CI/CD
 
 ## Estados de pago
 
@@ -29,50 +37,85 @@ Un pago puede tener los siguientes estados:
 
 ## Tecnologías
 
-- Java
-- Spring Boot
-- PostgreSQL
+- Java 25
+- Spring Boot 4
+- PostgreSQL 18
+- Flyway
 - Docker
-- Kubernetes
-- Terraform
-- Terragrunt
-- Google Cloud Platform
-- OpenTelemetry
-- GitHub Actions
+- OpenTelemetry & Micrometer
+- GitHub Actions (Gitleaks, SpotBugs/FindSecBugs, Trivy, CycloneDX SBOM)
 
 ## Ejecutar localmente
 
-SecurePay requiere Java 25 y Maven. Para usar la base de datos en memoria predeterminada, iniciar la API con:
+SecurePay requiere Java 25 y Maven. El perfil predeterminado `local` usa una base de datos H2 en memoria y credenciales demo exclusivamente locales. Inicia la API con:
 
 ```shell
 mvn spring-boot:run
 ```
 
-Ejecutar la suite de pruebas con:
+Ejecuta la suite de pruebas con:
 
 ```shell
 mvn test
 ```
 
-Crear un pago con una clave de idempotencia:
+Para ejecutar la verificación completa de integración con una instancia descartable de PostgreSQL en Docker (requiere PowerShell y Docker Desktop activo):
+
+```powershell
+.\scripts\test-integration.ps1
+```
+
+Autentícate en `/auth/login` para obtener un token JWT:
+
+```shell
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"customer-123","password":"<local-demo-password>"}'
+```
+
+Reemplaza `<local-demo-password>` por la contraseña configurada en tu entorno local antes de ejecutar la solicitud. Nunca subas credenciales reales al repositorio.
+
+Usa el `accessToken` devuelto como token Bearer para crear un pago con clave de idempotencia:
 
 ```shell
 curl -X POST http://localhost:8080/api/payments \
-  -u customer-123 \
+  -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: example-payment-001" \
   -d '{"merchantId":"merchant-456","amount":10.00,"currency":"USD"}'
 ```
 
-La API local usa autenticación HTTP Basic sólo para desarrollo. Los pagos siempre se crean para el cliente autenticado; producción debe usar un proveedor de identidad externo y nunca usar la contraseña demo configurada.
+Los usuarios demo locales son `customer-123`, `customer-789` y `admin-123`. Las contraseñas se almacenan en memoria codificadas con BCrypt y los JWT se firman con HS256. La clave de firma predeterminada es sólo para desarrollo local; el perfil `prod` exige `SECUREPAY_JWT_SECRET` explícito y en despliegues productivos debe integrarse un proveedor de identidad externo.
 
-Los datos de pagos e idempotencia se almacenan mediante JPA y se administran con migraciones Flyway. El perfil local/de prueba predeterminado usa una base de datos en memoria; el perfil `prod` requiere los valores de conexión PostgreSQL `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME` y `SECUREPAY_DATABASE_PASSWORD`.
+Los datos de pagos e idempotencia se almacenan mediante JPA y se administran con migraciones Flyway. La configuración se selecciona mediante perfiles de Spring:
 
-El endpoint de salud está disponible en `http://localhost:8080/actuator/health`. Informa el estado general de la aplicación y de la base de datos sin exponer detalles de componentes. Los probes de disponibilidad y actividad están en `/actuator/health/readiness` y `/actuator/health/liveness`.
+| Perfil | Base de datos | Credenciales y uso previsto |
+|---|---|---|
+| `local` (predeterminado) | H2 en memoria | Valores locales de aprendizaje. Configura `SECUREPAY_DEMO_PASSWORD` y `SECUREPAY_JWT_SECRET` para sobrescribir las credenciales demo. |
+| `postgres` | PostgreSQL | Desarrollo local contra PostgreSQL (`localhost:5432/securepay` por defecto); configura `SECUREPAY_DATABASE_PASSWORD` y `SECUREPAY_JWT_SECRET`. |
+| `prod` | PostgreSQL | Perfil de despliegue. Requiere `SECUREPAY_DATABASE_URL`, `SECUREPAY_DATABASE_USERNAME`, `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD` y `SECUREPAY_JWT_SECRET`; Swagger/OpenAPI quedan deshabilitados y bloqueados en `SecurityConfig`. |
 
-La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html`; el documento OpenAPI está en `/v3/api-docs`. Swagger UI queda deshabilitado con el perfil `prod`. En la interfaz, usar **Authorize** e ingresar las credenciales demo locales para probar los endpoints de pagos protegidos.
+Por ejemplo, para ejecutar contra una instancia PostgreSQL local en PowerShell:
+
+```powershell
+$env:SECUREPAY_DATABASE_PASSWORD = 'your-local-database-password'
+$env:SECUREPAY_JWT_SECRET = 'replace-with-a-random-secret-at-least-32-characters'
+mvn spring-boot:run '-Dspring-boot.run.profiles=postgres'
+```
+
+El endpoint de salud está disponible en `http://localhost:8080/actuator/health` e informa el estado general sin exponer detalles internos. Los probes de disponibilidad y actividad están en `/actuator/health/readiness` y `/actuator/health/liveness`.
+
+La documentación interactiva de la API está disponible localmente en `http://localhost:8080/swagger-ui.html` y el esquema OpenAPI en `/v3/api-docs`. En el perfil `prod`, tanto Swagger UI como `/v3/api-docs` están deshabilitados y protegidos por `SecurityConfig`. En la interfaz local, invoca `/auth/login`, copia el JWT devuelto y usa **Authorize** con el token Bearer.
 
 ### Ejecutar la API y PostgreSQL con Docker
+
+El `Dockerfile` compila y ejecuta las pruebas con Maven sobre JDK 26 apuntando a Java 25, y luego copia el JAR ejecutable a una imagen runtime Java 25 separada que corre como usuario no-root (`UID/GID 10001`), con imágenes base fijadas por digest SHA-256.
+
+Para construir la imagen y verificarla contra un contenedor PostgreSQL aislado (requiere PowerShell 7 y Docker Desktop):
+
+```powershell
+.\scripts\test-container.ps1
+```
 
 Con Docker Desktop en ejecución, inicia ambos servicios desde PowerShell:
 
@@ -80,54 +123,52 @@ Con Docker Desktop en ejecución, inicia ambos servicios desde PowerShell:
 .\scripts\run-local.ps1
 ```
 
-El script construye la imagen de la API con Java 25, inicia PostgreSQL, espera que ambos servicios estén saludables y muestra las direcciones locales. La versión PowerShell requiere las credenciales en variables de entorno.
-
 Desde Bash (Linux, WSL con acceso a Docker o Git Bash), usa:
 
 ```bash
 bash scripts/run-local.sh
 ```
 
-La versión Bash genera contraseñas locales aleatorias para PostgreSQL y los usuarios demo, además de una clave de firma JWT. Las guarda en `.env.securepay-local` y reutiliza ese archivo en los siguientes arranques. La regla existente `.env.*` lo excluye de Git; no subas sus valores al repositorio.
+La versión Bash genera contraseñas locales aleatorias para PostgreSQL y los usuarios demo, además de una clave de firma JWT en `.env.securepay-local` en el primer arranque, y reutiliza ese archivo en ejecuciones posteriores.
 
-Para elegir otro puerto y un proyecto Compose separado:
+Para verificar resiliencia ante caídas de base de datos, persistencia entre recreaciones y probes de salud (Día 13 / Día 40):
 
-```bash
-bash scripts/run-local.sh --api-port 8082 --project-name securepay-demo
-docker compose --env-file .env.securepay-local --project-name securepay-demo ps
-docker compose --env-file .env.securepay-local --project-name securepay-demo down
+```powershell
+.\scripts\test-compose.ps1
 ```
 
-Ejecuta estos comandos desde la raíz del repositorio. Si arrancaste sin nombre de proyecto, omite `--project-name securepay-demo`. El script también imprime el comando de detención con la ruta del archivo de credenciales. `down` conserva el volumen de datos; reutiliza el mismo proyecto y las mismas credenciales al volver a iniciar. No borres `.env.securepay-local` mientras conserves su volumen: generar otra contraseña no cambia la de una base ya inicializada.
+### Ejecutar contra PostgreSQL desde el host
 
-Las variables de entorno `SECUREPAY_DATABASE_PASSWORD`, `SECUREPAY_DEMO_PASSWORD` y `SECUREPAY_JWT_SECRET` tienen prioridad sobre el archivo; mantenlas consistentes si reutilizas la base. Puedes seleccionar el puerto con `--api-port` o `SECUREPAY_API_PORT`. Consulta las opciones con `bash scripts/run-local.sh --help`. Requiere Docker Engine y el plugin Compose disponibles; no necesita Java ni Maven instalados en el host.
-
-### Ejecutar con PostgreSQL
-
-Docker Compose inicia una base PostgreSQL local con un volumen persistente. Iniciarla con:
+Por seguridad, `compose.yaml` no publica el puerto de PostgreSQL en el host por defecto. Para exponer PostgreSQL en loopback (`127.0.0.1:5432`) cuando ejecutes Java o un cliente SQL en el host, utiliza el archivo de override opcional:
 
 ```shell
-docker compose up -d postgres
+docker compose -f compose.yaml -f compose.host-db.yaml up -d --wait postgres
 ```
 
-Luego ejecutar SecurePay con el perfil `postgres` para que Flyway aplique las migraciones en PostgreSQL:
+Luego inicia SecurePay con el perfil `postgres` para que Flyway aplique las migraciones sobre PostgreSQL:
 
 ```shell
 mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 ```
 
-La base local sólo queda disponible en `127.0.0.1:5432`. La contraseña predeterminada es sólo para desarrollo local; configurar `SECUREPAY_DATABASE_PASSWORD` antes de iniciar Compose para cambiarla. Detener la base con `docker compose down`; los datos permanecen en el volumen de Compose.
+Para detenerlo conservando los datos en el volumen de Compose:
+
+```shell
+docker compose -f compose.yaml -f compose.host-db.yaml down
+```
 
 ## Seguridad
 
-SecurePay seguirá prácticas de seguridad basadas en:
+SecurePay aplica controles basados en:
 
 - OWASP Top 10
 - OWASP API Security Top 10
-- Buenas prácticas de seguridad en la nube
+- Buenas prácticas de seguridad en contenedores y nube
 
-Artefactos de planificación de seguridad:
+Artefactos de planificación y verificación de seguridad:
 
 - [Modelo de amenazas del flujo de pagos](security/threat-models/securepay-payment-flow.es.md)
 - [Registro de riesgos de seguridad](security/risk-register.es.md)
 - [Plan de verificación de seguridad](security/security-verification-plan.es.md)
+
+Mantén las credenciales locales en variables de entorno del proceso o en un archivo `.env` ignorado por Git; nunca las subas al repositorio. El pipeline de CI ejecuta Gitleaks en cada PR y push, además de un escaneo programado semanal sobre todo el historial de Git.

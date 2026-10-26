@@ -39,7 +39,9 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            RateLimitFilter rateLimitFilter) throws Exception {
+            RateLimitFilter rateLimitFilter,
+            @Value("${springdoc.api-docs.enabled:true}") boolean apiDocsEnabled,
+            @Value("${springdoc.swagger-ui.enabled:true}") boolean swaggerUiEnabled) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -47,13 +49,20 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                         .accessDeniedHandler((request, response, exception) ->
                                 response.sendError(HttpStatus.FORBIDDEN.value())))
-                .authorizeHttpRequests(authorize -> authorize
-                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/actuator/metrics", "/actuator/metrics/**").hasRole("ADMIN")
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(authorize -> {
+                    authorize
+                            .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                            .requestMatchers("/auth/login").permitAll()
+                            .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                            .requestMatchers("/actuator/metrics", "/actuator/metrics/**").hasRole("ADMIN");
+                    if (swaggerUiEnabled) {
+                        authorize.requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll();
+                    }
+                    if (apiDocsEnabled) {
+                        authorize.requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll();
+                    }
+                    authorize.anyRequest().authenticated();
+                })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class)
                 .build();
