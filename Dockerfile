@@ -6,7 +6,9 @@ COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 mvn -B dependency:go-offline
 COPY src ./src
 COPY config ./config
-RUN --mount=type=cache,target=/root/.m2 mvn -B -Duser.timezone=UTC verify
+# CI runs the full test suites before building the image. Keep image builds
+# focused on packaging so Docker BuildKit does not execute the suites again.
+RUN --mount=type=cache,target=/root/.m2 mvn -B -Duser.timezone=UTC -DskipTests package
 
 FROM eclipse-temurin:25-jre-alpine-3.24@sha256:b7528962e65d43064d8a8b67ba175367896bc948363ea2d3fcd7f10d34e1f048 AS runtime
 
