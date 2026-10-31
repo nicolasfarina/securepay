@@ -1,7 +1,8 @@
 package com.securepay.integration;
 
 import com.jayway.jsonpath.JsonPath;
-import com.securepay.security.JwtService;
+import com.securepay.support.TestJwtTokens;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import com.securepay.support.PostgresTestDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -246,10 +247,25 @@ class ApiEndToEndTest {
 
     static Stream<String> invalidTokens() {
         return Stream.of("invalid.jwt.token", "",
-                new JwtService(TEST_SECRET, -60).generateToken("customer-123", "CUSTOMER"),
-                new JwtService("wrong-signing-key-for-day11-integration-tests", 60).generateToken("admin-123", "ADMIN"),
-                new JwtService(TEST_SECRET, 60).generateToken("customer-123", "ADMIN"),
-                new JwtService(TEST_SECRET, 60).generateToken("unknown-user", "CUSTOMER"));
+                TestJwtTokens.signed(TEST_SECRET, "customer-123", "CUSTOMER", -60),
+                TestJwtTokens.signed("wrong-signing-key-for-day11-integration-tests", "admin-123", "ADMIN", 60),
+                TestJwtTokens.signed(TEST_SECRET, "customer-123", "ADMIN", 60),
+                TestJwtTokens.signed(TEST_SECRET, "unknown-user", "CUSTOMER", 60),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.issuer("other")),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("iss"))),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("exp"))),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("sub"))),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("role"))),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.subject(" ")),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claim("role", " ")),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claim("role", java.util.List.of("CUSTOMER"))),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256,
+                        b -> b.notBefore(java.time.Instant.now().plusSeconds(600))),
+                TestJwtTokens.signed(TEST_SECRET + TEST_SECRET, MacAlgorithm.HS512, b -> {}),
+                Base64.getUrlEncoder().withoutPadding().encodeToString(
+                        "{\"alg\":\"none\"}".getBytes(StandardCharsets.UTF_8)) + "."
+                        + Base64.getUrlEncoder().withoutPadding().encodeToString(
+                        "{\"sub\":\"admin-123\",\"role\":\"ADMIN\"}".getBytes(StandardCharsets.UTF_8)) + ".");
     }
 
     @ParameterizedTest
