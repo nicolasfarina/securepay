@@ -3,6 +3,9 @@ package com.securepay.integration;
 import com.jayway.jsonpath.JsonPath;
 import com.securepay.support.TestJwtTokens;
 import com.securepay.security.TokenRevocationService;
+import com.securepay.security.RevokedTokenRepository;
+import com.securepay.security.TokenRevocationValidator;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import com.securepay.support.PostgresTestDatabase;
@@ -49,6 +52,7 @@ class ApiEndToEndTest {
     @Autowired private JdbcTemplate database;
     @Autowired private JwtDecoder jwtDecoder;
     @Autowired private TokenRevocationService tokenRevocationService;
+    @Autowired private RevokedTokenRepository revokedTokenRepository;
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private String customer;
 
@@ -79,6 +83,12 @@ class ApiEndToEndTest {
         expectStatus(logout, 204);
         expectStatus(get("/api/admin/payments", firstToken), 401);
         expectStatus(get("/api/admin/payments", secondToken), 403);
+
+        // A separately constructed service/validator sees the shared persisted revocation,
+        // as another application instance would when backed by the same PostgreSQL database.
+        var secondInstanceValidator = new TokenRevocationValidator(
+                new TokenRevocationService(revokedTokenRepository), new SimpleMeterRegistry());
+        assertThat(secondInstanceValidator.validate(jwt).hasErrors()).isTrue();
 
         String storedHash = database.queryForObject(
                 "select token_id_hash from revoked_tokens", String.class);
