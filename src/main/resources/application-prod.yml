@@ -17,4 +17,4 @@ securepay:
   security:
     demo-password: ${SECUREPAY_DEMO_PASSWORD}
     jwt-secret: ${SECUREPAY_JWT_SECRET}
-    jwt-expiration-seconds: ${SECUREPAY_JWT_EXPIRATION_SECONDS:3600}
+    jwt-expiration-seconds: ${SECUREPAY_JWT_EXPIRATION_SECONDS:900}

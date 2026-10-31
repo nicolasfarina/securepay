@@ -2,7 +2,6 @@ package com.securepay.security;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -33,6 +32,6 @@ public class JwtToUserAuthenticationConverter implements Converter<Jwt, Abstract
                 || !user.isAccountNonExpired() || !user.isCredentialsNonExpired()) {
             throw new InvalidBearerTokenException("Invalid token");
         }
-        return UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
+        return new JwtUserAuthenticationToken(user, user.getAuthorities(), jwt.getId(), jwt.getExpiresAt());
     }
 }

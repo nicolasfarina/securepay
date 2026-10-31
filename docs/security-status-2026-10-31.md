@@ -46,5 +46,13 @@ to external recipients is part of this work.
 - [SecurePay project](https://app.notion.com/p/400ec61028f0810faca0ccddef7f47ab):
   Day 36 and main checks should not be treated as unstarted work.
 
-Next proposed increment after migration review: design token lifetime and revocation behavior;
-implement ZAP separately with authenticated coverage and retained reports.
+## Token lifecycle implementation
+
+The follow-up branch `codex/token-revocation-jti` implements the lifecycle design from the
+[Grupo Farina ticket](https://app.notion.com/p/400ec61028f0813584bec8a215f733da): 15-minute
+access tokens, random `jti`, PostgreSQL-backed per-token revocation through `POST /auth/logout`,
+fail-closed validation, hourly cleanup, and no refresh-token flow. Tokens minted before rollout
+without `jti` require a fresh login. The change is not merged or deployed; see its PR for checks.
+
+OWASP ZAP with authenticated coverage, reports and a failure threshold remains the next separate
+security-control task.

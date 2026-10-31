@@ -2,6 +2,11 @@ package com.securepay.integration;
 
 import com.jayway.jsonpath.JsonPath;
 import com.securepay.support.TestJwtTokens;
+import com.securepay.security.TokenRevocationService;
+import com.securepay.security.RevokedTokenRepository;
+import com.securepay.security.TokenRevocationValidator;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import com.securepay.support.PostgresTestDatabase;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +50,9 @@ class ApiEndToEndTest {
 
     @LocalServerPort private int port;
     @Autowired private JdbcTemplate database;
+    @Autowired private JwtDecoder jwtDecoder;
+    @Autowired private TokenRevocationService tokenRevocationService;
+    @Autowired private RevokedTokenRepository revokedTokenRepository;
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private String customer;
 
@@ -55,9 +63,55 @@ class ApiEndToEndTest {
 
     @BeforeEach
     void prepare() throws Exception {
+        database.update("delete from revoked_tokens");
         database.update("delete from idempotency_records");
         database.update("delete from payments");
         customer = login("customer-123");
+    }
+
+    @Test
+    void accessTokensExpireAfterFifteenMinutesAndLogoutRevokesOnlyThatToken() throws Exception {
+        String firstToken = login("customer-123");
+        String secondToken = login("customer-123");
+        var jwt = jwtDecoder.decode(firstToken);
+        assertThat(jwt.getExpiresAt()).isEqualTo(jwt.getIssuedAt().plusSeconds(900));
+        assertThat(jwt.getId()).isNotBlank();
+
+        var logout = client.send(request("/auth/logout", firstToken)
+                        .POST(HttpRequest.BodyPublishers.noBody()).build(),
+                HttpResponse.BodyHandlers.ofString());
+        expectStatus(logout, 204);
+        expectStatus(get("/api/admin/payments", firstToken), 401);
+        expectStatus(get("/api/admin/payments", secondToken), 403);
+
+        // A separately constructed service/validator sees the shared persisted revocation,
+        // as another application instance would when backed by the same PostgreSQL database.
+        var secondInstanceValidator = new TokenRevocationValidator(
+                new TokenRevocationService(revokedTokenRepository), new SimpleMeterRegistry());
+        assertThat(secondInstanceValidator.validate(jwt).hasErrors()).isTrue();
+
+        String storedHash = database.queryForObject(
+                "select token_id_hash from revoked_tokens", String.class);
+        assertThat(storedHash).hasSize(64).isNotEqualTo(jwt.getId());
+        assertThat(database.queryForObject("select count(*) from revoked_tokens", Long.class)).isEqualTo(1);
+    }
+
+    @Test
+    void logoutRequiresAuthentication() throws Exception {
+        var logout = client.send(request("/auth/logout", null)
+                        .POST(HttpRequest.BodyPublishers.noBody()).build(),
+                HttpResponse.BodyHandlers.ofString());
+        expectStatus(logout, 401);
+        assertThat(database.queryForObject("select count(*) from revoked_tokens", Long.class)).isZero();
+    }
+
+    @Test
+    void expiredRevocationRowsAreRemoved() {
+        database.update("insert into revoked_tokens(token_id_hash, expires_at, revoked_at) values (?, ?, ?)",
+                "a".repeat(64), java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(60)),
+                java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(120)));
+        tokenRevocationService.removeExpiredRevocations();
+        assertThat(database.queryForObject("select count(*) from revoked_tokens", Long.class)).isZero();
     }
 
     @Test
@@ -256,6 +310,7 @@ class ApiEndToEndTest {
                 TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("exp"))),
                 TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("sub"))),
                 TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("role"))),
+                TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claims(c -> c.remove("jti"))),
                 TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.subject(" ")),
                 TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claim("role", " ")),
                 TestJwtTokens.signed(TEST_SECRET, MacAlgorithm.HS256, b -> b.claim("role", java.util.List.of("CUSTOMER"))),
@@ -311,6 +366,7 @@ class ApiEndToEndTest {
                 "{\"username\":\"" + username + "\",\"password\":\"" + TEST_PASSWORD + "\"}");
         expectStatus(response, 200);
         assertThat(JsonPath.<String>read(response.body(), "$.tokenType")).isEqualTo("Bearer");
+        assertThat(JsonPath.<Number>read(response.body(), "$.expiresIn").longValue()).isEqualTo(900);
         return JsonPath.read(response.body(), "$.accessToken");
     }
 

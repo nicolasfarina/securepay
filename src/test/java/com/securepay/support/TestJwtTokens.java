@@ -14,6 +14,7 @@ public final class TestJwtTokens {
     public static String signed(String secret, String subject, String role, long expiresIn) {
         return signed(secret, MacAlgorithm.HS256, claims -> claims
                 .subject(subject).claim("role", role)
+                .id(java.util.UUID.randomUUID().toString())
                 .issuedAt(Instant.now().minusSeconds(120))
                 .expiresAt(Instant.now().plusSeconds(expiresIn)));
     }
@@ -21,6 +22,7 @@ public final class TestJwtTokens {
     public static String signed(String secret, MacAlgorithm algorithm, Consumer<JwtClaimsSet.Builder> customize) {
         JwtClaimsSet.Builder claims = JwtClaimsSet.builder().issuer("securepay")
                 .subject("customer-123").claim("role", "CUSTOMER")
+                .id(java.util.UUID.randomUUID().toString())
                 .issuedAt(Instant.now().minusSeconds(120)).expiresAt(Instant.now().plusSeconds(60));
         customize.accept(claims);
         JwtEncoder encoder = new NimbusJwtEncoder(new ImmutableSecret<>(secret.getBytes(StandardCharsets.UTF_8)));

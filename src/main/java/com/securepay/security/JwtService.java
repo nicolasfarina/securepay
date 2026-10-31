@@ -6,6 +6,7 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -13,7 +14,7 @@ public class JwtService {
     private final long expirationSeconds;
 
     public JwtService(JwtEncoder encoder,
-            @Value("${securepay.security.jwt-expiration-seconds:3600}") long expirationSeconds) {
+            @Value("${securepay.security.jwt-expiration-seconds:900}") long expirationSeconds) {
         this.encoder = encoder;
         this.expirationSeconds = expirationSeconds;
     }
@@ -21,7 +22,7 @@ public class JwtService {
     public String generateToken(String username, String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("securepay").subject(username).claim("role", role)
+                .issuer("securepay").subject(username).claim("role", role).id(UUID.randomUUID().toString())
                 .issuedAt(now).expiresAt(now.plusSeconds(expirationSeconds)).build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).type("JWT").build();
         return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

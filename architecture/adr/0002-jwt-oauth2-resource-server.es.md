@@ -4,7 +4,7 @@ English version: [Read in English](0002-jwt-oauth2-resource-server.md)
 
 ## Estado
 
-Propuesta; implementada en la rama del PR, pendiente de revisión y aprobación explícita del merge.
+Aceptada; implementada mediante el [PR #43](https://github.com/nicolasfarina/securepay/pull/43).
 
 ## Contexto
 
@@ -38,13 +38,19 @@ evaluar RS256/JWKS por separado.
 
 ## Consecuencias y pendientes
 
-- Los tokens HS256 vigentes con los claims requeridos mantienen compatibilidad estructural.
+- Los tokens HS256 anteriores que aún no vencieron pero no tienen `jti` se rechazan; el cliente debe iniciar sesión otra vez.
 - Un Bearer inválido ahora falla también en rutas públicas. El esquema Bearer acepta mayúsculas
   y minúsculas según el resolver estándar. No se habilitan tokens por query ni formulario.
-- Se conserva la duración predeterminada de 3600 segundos; reducirla sigue pendiente.
-- No hay revocación individual, logout de tokens, refresh tokens, denylist ni rotación administrada.
-  Deshabilitar una cuenta invalida sus tokens en la siguiente petición, sin sustituir revocación individual.
-  No se agregan refresh tokens sin diseñar su ciclo de vida y almacenamiento.
+- La duración predeterminada configurada del access token es 900 segundos (15 minutos).
+- `POST /auth/logout` revoca solo el token presentado. PostgreSQL guarda el hash SHA-256 de su
+  `jti` aleatorio y expiración; el validador consulta la tabla compartida en cada petición Bearer.
+  Si la base falla, el acceso falla cerrado. Las filas vencidas se eliminan cada hora.
+- La revocación agrega una lectura PostgreSQL por petición autenticada y hace que las rutas protegidas
+  dependan de ese almacén. Funciona entre instancias y sobrevive reinicios.
+- No se incluyen refresh tokens; al vencer hay que iniciar sesión otra vez. Agregar rotación y
+  detección de reutilización solo cuando un cliente persistente necesite sesiones largas.
+- Los tokens emitidos antes de este cambio sin `jti` requieren un nuevo inicio de sesión.
+- La rotación administrada de claves y RS256/JWKS siguen como decisiones separadas.
 - El rate limiting sigue en memoria por proceso. Faltan control distribuido y pruebas operativas
   de proxies confiables. ZAP con acceso autenticado, cobertura y reportes sigue pendiente.
 - Las pruebas Maven raíz cubren autenticación HTTP, manipulación, algoritmos, claims, propiedad,
