@@ -7,8 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Configuration
+@EnableScheduling
 public class JwtConfig {
     @Bean
     SecretKey jwtSigningKey(@Value("${securepay.security.jwt-secret}") String secret) {
@@ -31,12 +34,13 @@ public class JwtConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder(SecretKey jwtSigningKey) {
+    JwtDecoder jwtDecoder(SecretKey jwtSigningKey, OAuth2TokenValidator<Jwt> revocationValidator) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSigningKey)
                 .macAlgorithm(MacAlgorithm.HS256).build();
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 new JwtTimestampValidator(Duration.ZERO),
                 new JwtIssuerValidator("securepay"),
+                revocationValidator,
                 jwt -> {
                     Object subject = jwt.getClaims().get("sub");
                     Object role = jwt.getClaims().get("role");

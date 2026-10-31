@@ -4,7 +4,7 @@ Spanish version: [Leer en español](0002-jwt-oauth2-resource-server.es.md)
 
 ## Status
 
-Proposed; implemented on the PR branch, pending review and explicit merge approval.
+Accepted; implemented by [PR #43](https://github.com/nicolasfarina/securepay/pull/43).
 
 ## Context
 
@@ -38,14 +38,20 @@ lab and evaluate RS256/JWKS separately. Do not introduce a second signing scheme
 
 ## Consequences and remaining work
 
-- Existing unexpired HS256 tokens with the required claims remain structurally compatible.
+- Existing unexpired HS256 tokens without a `jti` are rejected after this change; clients must log in again.
 - Invalid Bearer credentials now fail on public endpoints too; the standard resolver also handles
   the Bearer scheme case-insensitively. No query or form-body tokens are enabled.
 - Validation is maintained by Spring/Nimbus; business identity checks remain application policy.
-- The default access-token lifetime remains 3600 seconds. Shortening it is still a separate decision.
-- There is no individual-token logout/revocation, refresh-token flow, denylist or managed key rotation.
-  Disabling an account invalidates its tokens on the next request; this does not replace individual revocation.
-  No refresh tokens are added without a lifecycle and storage design.
+- The configured default access-token lifetime is 900 seconds (15 minutes).
+- `POST /auth/logout` revokes only the presented token. The application stores a SHA-256 hash
+  of its random `jti` with the expiry in PostgreSQL and checks the shared table during every
+  bearer-token validation. A database error fails closed. Expired rows are deleted hourly.
+- Revocation adds one PostgreSQL read to each bearer-authenticated request and makes protected
+  requests depend on the revocation store. This supports multiple instances and survives restarts.
+- Refresh tokens remain out of scope; expiry requires login again. Introduce rotation and reuse
+  detection only when a persistent client needs longer sessions.
+- Tokens minted before this change without `jti` require clients to log in again.
+- Managed signing-key rotation and RS256/JWKS remain separate decisions.
 - Rate-limit state remains in memory per instance; distributed enforcement and trusted-proxy deployment
   tests remain open. DAST with authenticated access and reports remains open.
 - Root Maven tests cover HTTP authentication, tampering, algorithms, claims, ownership, 401/403/429,
