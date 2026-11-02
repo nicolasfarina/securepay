@@ -15,22 +15,8 @@ env:
     maxDuration: 240
 
 jobs:
-  # Insert the short-lived bearer only on the intended read-only protected URL.
-  # Replacer modifies the actual outbound ZAP HTTP message after job parsing.
-  - type: replacer
-    parameters:
-      deleteAllRules: true
-    rules:
-      - description: disposable-payment-read-only-bearer
-        url: "^http://api:8080/api/payments/00000000-0000-0000-0000-000000000000$"
-        method: GET
-        matchType: req_header
-        matchString: Authorization
-        matchRegex: false
-        replacementString: "Bearer ${DAST_JWT}"
-
   # Explicit read-only probes ensure ZAP observes authenticated API traffic.
-  # A generated short-lived customer JWT is injected by ZAP_AUTH_HEADER_VALUE.
+  # The runner sets ZAP_AUTH_HEADER_VALUE and restricts it to api:8080.
   - type: requestor
     requests:
       - name: readiness

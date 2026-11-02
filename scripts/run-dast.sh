@@ -60,7 +60,8 @@ echo "Running ZAP passive baseline against the isolated API; no activeScan job"
 zap_log="$(mktemp)"
 set +e
 docker run --rm --network "$network" \
-  -e DAST_JWT="$token" \
+  -e "ZAP_AUTH_HEADER_VALUE=Bearer $token" \
+  -e ZAP_AUTH_HEADER_SITE=api:8080 \
   -v "$PWD/security/zap/plan.yaml:/zap/wrk/plan.yaml:ro" \
   -v "$reports:/zap/wrk/reports:rw" \
   --entrypoint zap.sh "$image" -cmd -autorun /zap/wrk/plan.yaml 2>&1 | tee "$zap_log"
