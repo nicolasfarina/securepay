@@ -30,11 +30,12 @@ or production services are used.
    - Disposable user `customer-123` can log in and obtain a short-lived JWT.
    - Authenticated `GET /api/payments/<nonexistent-uuid>` returns 404 (not
      401/403), establishing successful customer authentication and routing.
-2. ZAP receives the ephemeral JWT through `ZAP_AUTH_HEADER_VALUE`, restricted
-   to the local host `api:8080` using `ZAP_AUTH_HEADER_SITE`. Its Requestor
-   job performs GET-only checks against readiness, OpenAPI and the protected
-   payment lookup. The traditional spider is limited to the disposable origin
-   and Swagger UI, with form submission disabled, followed by passive scanning.
+2. ZAP receives the ephemeral JWT as an environment variable `DAST_JWT`
+   and substitutes it into the `Authorization: Bearer` header **only** for
+   the protected GET in its Requestor job. The Requestor also checks readiness
+   and OpenAPI. Response-code mismatches are blocking even when low-severity
+   scan warnings are allowed. The traditional spider explores only disposable
+   Swagger UI with form submission disabled, followed by passive scanning.
 3. No `activeScan` job is configured, no state-changing payment or logout
    request is sent by the scan configuration, and the stack has no direct
    network access to production. The Swagger UI may load static assets; the
@@ -109,10 +110,13 @@ The low findings are **not** declared false positives or suppressed. Review
 and track the JavaScript advisory against the exact bundled dependency; a
 separate springdoc/Swagger UI update may be needed.
 
-The PR adds a restrictive global CSP with same-origin scripts, disabled
-objects and frames, and an explicit limited inline-style allowance for
-Swagger UI compatibility. An HTTP integration test checks the CSP headers.
-The requestor plan was corrected to ensure the authenticated GET is
-actually issued by ZAP. A rerun must confirm the Medium alert is gone and
-inspect any remaining Low findings. This documentation alone is not proof
-of a passing scan.
+The PR adds a restrictive CSP with same-origin scripts and styles, disabled
+objects and frames, and an explicit `form-action 'self'`. There is no
+`unsafe-inline` style exception. An HTTP integration test checks these
+headers. After the first rerun, ZAP reported Medium `10055` alerts for a
+missing `form-action` directive and unsafe inline styles. The subsequent
+patch addresses both. The Requestor plan now places `requests` at the
+correct job level and injects the short-lived JWT explicitly on the protected
+GET; a previous 401 was caught and treated as an actual coverage failure.
+A rerun must confirm the Medium alerts are gone and inspect remaining Low
+findings. This documentation alone is not proof of a passing scan.
