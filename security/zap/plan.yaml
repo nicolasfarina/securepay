@@ -27,7 +27,7 @@ jobs:
         method: GET
         url: http://api:8080/api/payments/00000000-0000-0000-0000-000000000000
         headers:
-          - "Authorization: Bearer ${DAST_JWT}"
+          - "Authorization:Bearer ${DAST_JWT}"
         responseCode: 404
       - name: openapi-definition
         method: GET
