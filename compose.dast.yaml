@@ -1,0 +1,35 @@
+# Standalone stack. Never combine with the persistent or production Compose files.
+services:
+  api:
+    image: securepay:zap-local
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SECUREPAY_DEMO_PASSWORD: dast-local-only
+      SECUREPAY_TRACING_OTLP_ENABLED: "false"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [isolated]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 20s
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable@sha256:030d3df57735dacbb83464854758e674dd9ad01d79d12a129a8e58b1fd384238
+    command: [python3, /zap/wrk/passive.py]
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./dast:/zap/wrk:rw
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [isolated]
+networks:
+  isolated:
+    internal: true

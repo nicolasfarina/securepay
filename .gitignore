@@ -1,4 +1,6 @@
 target/
+dast/reports/
+dast/__pycache__/
 .env
 .env.*
 .envrc
