@@ -7,6 +7,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,7 +25,9 @@ class SecurityHeadersHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Security-Policy", containsString("script-src 'self'")))
                 .andExpect(header().string("Content-Security-Policy", containsString("object-src 'none'")))
-                .andExpect(header().string("Content-Security-Policy", containsString("frame-ancestors 'none'")));
+                .andExpect(header().string("Content-Security-Policy", containsString("frame-ancestors 'none'")))
+                .andExpect(header().string("Content-Security-Policy", containsString("form-action 'self'")))
+                .andExpect(header().string("Content-Security-Policy", not(containsString("'unsafe-inline'"))));
     }
 
     @Test
