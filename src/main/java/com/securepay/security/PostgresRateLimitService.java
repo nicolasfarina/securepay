@@ -14,7 +14,7 @@ import java.time.Duration;
  */
 @Component
 @ConditionalOnProperty(name = "securepay.rate-limit.backend", havingValue = "postgres")
-final class PostgresRateLimitService implements RateLimiter {
+public class PostgresRateLimitService implements RateLimiter {
 
     private final JdbcTemplate jdbc;
 
