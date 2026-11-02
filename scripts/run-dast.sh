@@ -69,7 +69,7 @@ set -e
 
 # ZAP requestor mismatches are warnings by default; enforce them as failures
 # independently of the Low-severity vulnerability warning tolerance.
-if grep -Eq "Difference in response code values|Unrecognised parameter for job requestor|Job spider error accessing URL" "$zap_log"; then
+if grep -Eq "Difference in response code values|Unrecognised parameter for job|Job spider error accessing URL" "$zap_log"; then
   echo "FAIL: ZAP path coverage or plan validation did not match expectations" >&2
   exit 1
 fi
