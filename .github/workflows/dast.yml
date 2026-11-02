@@ -1,0 +1,38 @@
+name: Passive DAST (OWASP ZAP)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: securepay-dast-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  dast:
+    name: Passive ZAP against disposable Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Run disposable authenticated baseline
+        run: bash scripts/run-dast.sh
+
+      - name: Upload JSON, HTML and scoped coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: securepay-zap-passive-report
+          path: |
+            target/zap-reports/zap-baseline.html
+            target/zap-reports/zap-baseline.json
+            target/zap-reports/coverage.json
+          if-no-files-found: warn
+          retention-days: 14
