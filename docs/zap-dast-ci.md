@@ -84,9 +84,9 @@ images. No deployment or merge is performed.
 
 ## Known limitations / follow-up
 
-- The ZAP container image currently uses the official `stable` tag.
-  Before long-term production gating, pin an immutable digest with an
-  approved update policy.
+- The ZAP container image uses the official `stable` tag **plus a pinned SHA-256 digest**
+  observed in the initial CI run. Update the digest through a reviewed
+  dependency refresh; do not silently switch to a floating tag.
 - Swagger UI is explored with GET-only spidering. There is no active
   fuzzing, SQL injection exploitation or dangerous endpoint mutation.
 - Periodic manual review is needed for low-severity alerts; scan coverage
