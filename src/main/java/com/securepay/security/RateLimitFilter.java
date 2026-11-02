@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,7 +19,7 @@ import java.time.Duration;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private final RateLimitService rateLimitService;
+    private final RateLimiter rateLimitService;
     private final ClientIpResolver clientIpResolver;
     private final int loginMaxAttempts;
     private final Duration loginWindow;
@@ -25,7 +27,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Duration paymentWindow;
 
     public RateLimitFilter(
-            RateLimitService rateLimitService,
+            RateLimiter rateLimitService,
             ClientIpResolver clientIpResolver,
             @Value("${securepay.rate-limit.login.max-attempts:30}") int loginMaxAttempts,
             @Value("${securepay.rate-limit.login.window:1m}") Duration loginWindow,
@@ -70,6 +72,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } catch (ClientIpResolver.InvalidForwardedAddressException ex) {
             // A trusted edge is misconfigured or has passed a caller-controlled header.
             response.sendError(HttpStatus.BAD_REQUEST.value());
+        } catch (DataAccessException | TransactionException ex) {
+            // A shared quota store must never fail open or masquerade as a 429.
+            response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
         }
     }
 
