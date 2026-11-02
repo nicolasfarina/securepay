@@ -26,6 +26,7 @@ SECUREPAY_JWT_SECRET="$(openssl rand -hex 48)"
 cleanup() {
   local result=$?
   trap - EXIT
+  if [[ -n "${zap_log:-}" ]]; then rm -f "$zap_log"; fi
   "${compose[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
   unset SECUREPAY_DATABASE_PASSWORD SECUREPAY_DEMO_PASSWORD SECUREPAY_JWT_SECRET
   exit "$result"
@@ -56,15 +57,24 @@ fi
 printf '%s\n' '{"target":"isolated-compose-only","anonymous_payment":401,"authenticated_missing_payment":404,"readiness":200,"openapi":200,"methods_scanned":"GET-only; passive ZAP"}' > "$reports/coverage.json"
 
 echo "Running ZAP passive baseline against the isolated API; no activeScan job"
+zap_log="$(mktemp)"
 set +e
 docker run --rm --network "$network" \
-  -e ZAP_AUTH_HEADER_VALUE="Bearer $token" \
-  -e ZAP_AUTH_HEADER_SITE="api:8080" \
+  -e DAST_JWT="$token" \
   -v "$PWD/security/zap/plan.yaml:/zap/wrk/plan.yaml:ro" \
   -v "$reports:/zap/wrk/reports:rw" \
-  --entrypoint zap.sh "$image" -cmd -autorun /zap/wrk/plan.yaml
-scan_status=$?
+  --entrypoint zap.sh "$image" -cmd -autorun /zap/wrk/plan.yaml 2>&1 | tee "$zap_log"
+scan_status=${PIPESTATUS[0]}
 set -e
+
+# ZAP requestor mismatches are warnings by default; enforce them as failures
+# independently of the Low-severity vulnerability warning tolerance.
+if grep -Eq "Difference in response code values|Unrecognised parameter for job requestor|Job spider error accessing URL" "$zap_log"; then
+  echo "FAIL: ZAP path coverage or plan validation did not match expectations" >&2
+  exit 1
+fi
+rm -f "$zap_log"
+zap_log=""
 
 # Never upload a report that accidentally contains a live bearer or demo password.
 for artifact in "$reports/zap-baseline.html" "$reports/zap-baseline.json"; do
