@@ -32,12 +32,13 @@ final class PostgresRateLimitService implements RateLimiter {
         String digest = TokenIdHasher.sha256(key);
         long refillMillis = refillPeriod.toMillis();
 
-        // Concurrent first requests cannot insert two rows for the same identity.
+        // The upsert locks an existing bucket before SELECT, including against cleanup;\n        // a no-op update prevents the row disappearing between statements.
         jdbc.update("""
                 INSERT INTO rate_limit_buckets
                     (key_hash, capacity, refill_period_ms, tokens, last_refill_at, last_access_at)
                 VALUES (?, ?, ?, ?, clock_timestamp(), clock_timestamp())
-                ON CONFLICT (key_hash) DO NOTHING
+                ON CONFLICT (key_hash) DO UPDATE
+                    SET last_access_at = rate_limit_buckets.last_access_at
                 """, digest, capacity, refillMillis, (double) capacity);
 
         Bucket state = jdbc.queryForObject("""
