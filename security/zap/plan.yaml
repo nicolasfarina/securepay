@@ -1,0 +1,81 @@
+# ZAP automation: reads only, passive analysis, no activeScan job.
+# The plan is intentionally scoped to the disposable Compose API.
+env:
+  contexts:
+    - name: securepay-dast
+      urls:
+        - http://api:8080
+      includePaths:
+        - http://api:8080/.*
+      excludePaths:
+        - http://api:8080/auth/logout
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    maxDuration: 240
+
+jobs:
+  # Explicit read-only probes ensure ZAP observes authenticated API traffic.
+  # A generated short-lived customer JWT is injected by ZAP_AUTH_HEADER_VALUE.
+  - type: requestor
+    parameters:
+      requests:
+        - name: readiness
+          method: GET
+          url: http://api:8080/actuator/health/readiness
+          responseCode: 200
+        - name: authenticated-nonexistent-payment
+          method: GET
+          url: http://api:8080/api/payments/00000000-0000-0000-0000-000000000000
+          responseCode: 404
+        - name: openapi-definition
+          method: GET
+          url: http://api:8080/v3/api-docs
+          responseCode: 200
+
+  # No POST form submission and no aggressive or active scanner.
+  - type: spider
+    parameters:
+      context: securepay-dast
+      url: http://api:8080/swagger-ui/index.html
+      maxDuration: 1
+      maxDepth: 3
+      postForm: false
+      processForm: false
+      parseRobotsTxt: false
+      parseSitemapXml: false
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  # Do not use *-plus report templates: they may serialize bearer headers.
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk/reports
+      reportFile: zap-baseline.html
+      reportTitle: SecurePay disposable baseline DAST
+      reportDescription: Read-only authenticated API probes and passive ZAP scan
+      displayReport: false
+    sites:
+      - api:8080
+
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk/reports
+      reportFile: zap-baseline.json
+      reportTitle: SecurePay disposable baseline DAST
+      displayReport: false
+    sites:
+      - api:8080
+
+  # Medium/high risks fail; low risks are reviewed, not silently ignored.
+  - type: exitStatus
+    parameters:
+      errorLevel: Medium
+      warnLevel: Low
+      okExitValue: 0
+      warnExitValue: 2
+      errorExitValue: 1
