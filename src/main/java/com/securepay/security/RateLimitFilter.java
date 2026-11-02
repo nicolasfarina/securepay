@@ -18,6 +18,7 @@ import java.time.Duration;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;
+    private final ClientIpResolver clientIpResolver;
     private final int loginMaxAttempts;
     private final Duration loginWindow;
     private final int paymentMaxRequests;
@@ -25,11 +26,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     public RateLimitFilter(
             RateLimitService rateLimitService,
+            ClientIpResolver clientIpResolver,
             @Value("${securepay.rate-limit.login.max-attempts:30}") int loginMaxAttempts,
             @Value("${securepay.rate-limit.login.window:1m}") Duration loginWindow,
             @Value("${securepay.rate-limit.payments.max-requests:20}") int paymentMaxRequests,
             @Value("${securepay.rate-limit.payments.window:1m}") Duration paymentWindow) {
         this.rateLimitService = rateLimitService;
+        this.clientIpResolver = clientIpResolver;
         this.loginMaxAttempts = loginMaxAttempts;
         this.loginWindow = loginWindow;
         this.paymentMaxRequests = paymentMaxRequests;
@@ -49,27 +52,32 @@ public class RateLimitFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-        if (isLogin(request)) {
-            limitLoginFailures(request, response, filterChain);
-            return;
-        }
+        try {
+            if (isLogin(request)) {
+                limitLoginFailures(request, response, filterChain);
+                return;
+            }
 
-        String key = paymentKey(request);
-        RateLimitService.Decision decision = rateLimitService.tryAcquire(
-                key, paymentMaxRequests, paymentWindow);
-        if (!decision.allowed()) {
-            reject(response, decision);
-            return;
-        }
+            String key = paymentKey(request);
+            RateLimitService.Decision decision = rateLimitService.tryAcquire(
+                    key, paymentMaxRequests, paymentWindow);
+            if (!decision.allowed()) {
+                reject(response, decision);
+                return;
+            }
 
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+        } catch (ClientIpResolver.InvalidForwardedAddressException ex) {
+            // A trusted edge is misconfigured or has passed a caller-controlled header.
+            response.sendError(HttpStatus.BAD_REQUEST.value());
+        }
     }
 
     private void limitLoginFailures(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-        String key = "login:ip:" + clientIp(request);
+        String key = "login:ip:" + clientIpResolver.resolve(request);
         RateLimitService.Decision decision = rateLimitService.tryAcquire(key, loginMaxAttempts, loginWindow);
         if (!decision.allowed()) {
             reject(response, decision);
@@ -84,7 +92,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (authentication != null && authentication.isAuthenticated()) {
             return "payment:user:" + authentication.getName();
         }
-        return "payment:ip:" + clientIp(request);
+        return "payment:ip:" + clientIpResolver.resolve(request);
     }
 
     private static void reject(HttpServletResponse response, RateLimitService.Decision decision)
@@ -113,8 +121,4 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return expectedPath.equals(requestPath) || (expectedPath + "/").equals(requestPath);
     }
 
-    private static String clientIp(HttpServletRequest request) {
-        String remoteAddress = request.getRemoteAddr();
-        return remoteAddress == null || remoteAddress.isBlank() ? "unknown" : remoteAddress;
-    }
 }
