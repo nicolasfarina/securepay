@@ -9,7 +9,7 @@ if [[ "${CI:-}" != "true" && "${SECUREPAY_ALLOW_DAST_LOCAL:-}" != "yes" ]]; then
 fi
 
 cd "$(dirname "$0")/.."
-image="ghcr.io/zaproxy/zaproxy:stable"
+image="ghcr.io/zaproxy/zaproxy:stable@sha256:030d3df57735dacbb83464854758e674dd9ad01d79d12a129a8e58b1fd384238"
 project="securepay-dast-${GITHUB_RUN_ID:-manual}-${RANDOM}"
 project="${project,,}"
 compose=(docker compose -p "$project" -f compose.dast.yaml)
