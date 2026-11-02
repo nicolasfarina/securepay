@@ -93,3 +93,26 @@ images. No deployment or merge is performed.
   and passive rules can change with upstream ZAP updates.
 - Verify execution time, false-positive triage and report sensitivity on
   pull request CI before making the job a required branch-protection check.
+
+
+## Initial CI findings and remediation (2 November 2026)
+
+The first DAST run was **not** treated as successful:
+[run #41458229606](https://github.com/nicolasfarina/securepay/actions/runs/41458229606)
+exposed a plan validation warning (the `requestor.requests` list must be a
+job-level sibling of `parameters`), plus a genuine Medium/high-confidence
+`10038 — Content Security Policy (CSP) Header Not Set` on
+`/swagger-ui/index.html`. The automated report also contains Low findings
+`10096 — Timestamp Disclosure - Unix` in vendor JavaScript and
+`10003 — Vulnerable JS Library` reporting `DOMPurify.version="3.4.13"`.
+The low findings are **not** declared false positives or suppressed. Review
+and track the JavaScript advisory against the exact bundled dependency; a
+separate springdoc/Swagger UI update may be needed.
+
+The PR adds a restrictive global CSP with same-origin scripts, disabled
+objects and frames, and an explicit limited inline-style allowance for
+Swagger UI compatibility. An HTTP integration test checks the CSP headers.
+The requestor plan was corrected to ensure the authenticated GET is
+actually issued by ZAP. A rerun must confirm the Medium alert is gone and
+inspect any remaining Low findings. This documentation alone is not proof
+of a passing scan.
