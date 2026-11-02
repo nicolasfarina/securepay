@@ -4,7 +4,7 @@ env:
   contexts:
     - name: securepay-dast
       urls:
-        - http://api:8080
+        - http://api:8080/swagger-ui/index.html
       includePaths:
         - http://api:8080/.*
       excludePaths:
@@ -18,20 +18,19 @@ jobs:
   # Explicit read-only probes ensure ZAP observes authenticated API traffic.
   # A generated short-lived customer JWT is injected by ZAP_AUTH_HEADER_VALUE.
   - type: requestor
-    parameters:
-      requests:
-        - name: readiness
-          method: GET
-          url: http://api:8080/actuator/health/readiness
-          responseCode: 200
-        - name: authenticated-nonexistent-payment
-          method: GET
-          url: http://api:8080/api/payments/00000000-0000-0000-0000-000000000000
-          responseCode: 404
-        - name: openapi-definition
-          method: GET
-          url: http://api:8080/v3/api-docs
-          responseCode: 200
+    requests:
+      - name: readiness
+        method: GET
+        url: http://api:8080/actuator/health/readiness
+        responseCode: 200
+      - name: authenticated-nonexistent-payment
+        method: GET
+        url: http://api:8080/api/payments/00000000-0000-0000-0000-000000000000
+        responseCode: 404
+      - name: openapi-definition
+        method: GET
+        url: http://api:8080/v3/api-docs
+        responseCode: 200
 
   # No POST form submission and no aggressive or active scanner.
   - type: spider
