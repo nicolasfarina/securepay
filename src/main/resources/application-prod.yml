@@ -14,6 +14,8 @@ springdoc:
     enabled: false
 
 securepay:
+  rate-limit:
+    backend: postgres
   security:
     demo-password: ${SECUREPAY_DEMO_PASSWORD}
     jwt-secret: ${SECUREPAY_JWT_SECRET}

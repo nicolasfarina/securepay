@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PaymentTracingTest {
     @Autowired private PaymentService paymentService;
     @Autowired private InMemorySpanExporter spanExporter;
+    @Autowired private OpenTelemetry openTelemetry;
 
     @AfterEach
     void clearFinishedSpans() {
@@ -34,9 +35,10 @@ class PaymentTracingTest {
 
     @Test
     void recordsSuccessfulPaymentCreationWithoutSensitiveIdentifiers() {
+        recordUnrelatedBackgroundSpan();
         var payment = paymentService.create(request("10.00"), "customer-private", "trace-" + UUID.randomUUID());
 
-        var span = spanExporter.getFinishedSpanItems().getFirst();
+        var span = paymentSpans().getFirst();
         assertThat(span.getName()).isEqualTo("payment.create");
         assertThat(span.getStatus().getStatusCode()).isEqualTo(StatusCode.OK);
         assertThat(span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.stringKey("payment.status")))
@@ -45,7 +47,7 @@ class PaymentTracingTest {
         assertThat(span.getAttributes().asMap().keySet())
                 .extracting(Object::toString)
                 .doesNotContain("payment.id", "customer.id", "merchant.id", "idempotency.key");
-        assertThat(spanExporter.getFinishedSpanItems()).hasSize(1);
+        assertThat(paymentSpans()).hasSize(1);
         assertThat(payment.status()).isEqualTo(PaymentStatus.PENDING);
     }
 
@@ -54,11 +56,13 @@ class PaymentTracingTest {
         String key = "trace-conflict-" + UUID.randomUUID();
         paymentService.create(request("10.00"), "customer-private", key);
         spanExporter.reset();
+        recordUnrelatedBackgroundSpan();
 
         assertThatThrownBy(() -> paymentService.create(request("20.00"), "customer-private", key))
                 .isInstanceOf(IdempotencyConflictException.class);
 
-        var span = spanExporter.getFinishedSpanItems().getFirst();
+        assertThat(paymentSpans()).hasSize(1);
+        var span = paymentSpans().getFirst();
         assertThat(span.getName()).isEqualTo("payment.create");
         assertThat(span.getStatus().getStatusCode()).isEqualTo(StatusCode.ERROR);
         assertThat(span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.stringKey("error.type")))
@@ -68,6 +72,18 @@ class PaymentTracingTest {
 
     private static CreatePaymentRequest request(String amount) {
         return new CreatePaymentRequest("merchant-private", new BigDecimal(amount), "USD");
+    }
+
+    private java.util.List<io.opentelemetry.sdk.trace.data.SpanData> paymentSpans() {
+        return spanExporter.getFinishedSpanItems().stream()
+                .filter(span -> span.getName().equals("payment.create"))
+                .toList();
+    }
+
+    private void recordUnrelatedBackgroundSpan() {
+        // Scheduled tasks share this exporter. Their ordering must not affect payment assertions.
+        openTelemetry.getTracer("background-test").spanBuilder("task tokenRevocationService.removeExpiredRevocations")
+                .startSpan().end();
     }
 
     @TestConfiguration

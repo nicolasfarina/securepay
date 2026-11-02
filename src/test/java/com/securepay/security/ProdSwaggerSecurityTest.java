@@ -19,7 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "SECUREPAY_DATABASE_USERNAME=sa",
         "SECUREPAY_DATABASE_PASSWORD=",
         "SECUREPAY_DEMO_PASSWORD=prod-swagger-test-password",
-        "SECUREPAY_JWT_SECRET=prod-swagger-test-secret-at-least-32-chars"
+        "SECUREPAY_JWT_SECRET=prod-swagger-test-secret-at-least-32-chars",
+        "securepay.rate-limit.backend=memory"
 })
 @ActiveProfiles("prod")
 @AutoConfigureMockMvc
