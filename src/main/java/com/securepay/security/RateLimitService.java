@@ -2,6 +2,7 @@ package com.securepay.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -11,7 +12,8 @@ import java.util.concurrent.Semaphore;
 
 /** A bounded, per-process token bucket for the learning project's HTTP limits. */
 @Component
-public class RateLimitService {
+@ConditionalOnProperty(name = "securepay.rate-limit.backend", havingValue = "memory", matchIfMissing = true)
+public class RateLimitService implements RateLimiter {
 
     private final ConcurrentHashMap<String, TokenBucket> buckets = new ConcurrentHashMap<>();
     private final Semaphore entrySlots;
@@ -38,6 +40,7 @@ public class RateLimitService {
         return bucket == null ? Decision.permit() : bucket.check(clock.millis(), false);
     }
 
+    @Override
     public Decision tryAcquire(String key, int capacity, Duration refillPeriod) {
         validate(capacity, refillPeriod);
         long now = clock.millis();

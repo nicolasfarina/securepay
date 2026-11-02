@@ -38,6 +38,8 @@ management:
 
 securepay:
   rate-limit:
+    trusted-proxies: ${SECUREPAY_RATE_LIMIT_TRUSTED_PROXIES:}
+    backend: memory
     max-tracked-clients: 10000
     login:
       max-attempts: 30
