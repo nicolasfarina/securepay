@@ -43,6 +43,14 @@ class Day44ResiliencePatternsTest {
 
         assertThat(call.get()).isEqualTo("available");
         assertThat(attempts).hasValue(3);
+
+        AtomicInteger permanentAttempts = new AtomicInteger();
+        Supplier<String> permanentFailure = Retry.decorateSupplier(retry, () -> {
+            permanentAttempts.incrementAndGet();
+            throw new IllegalArgumentException("permanent failure");
+        });
+        assertThatThrownBy(permanentFailure::get).isInstanceOf(IllegalArgumentException.class);
+        assertThat(permanentAttempts).hasValue(1);
     }
 
     @Test

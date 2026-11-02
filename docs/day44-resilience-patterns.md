@@ -47,5 +47,5 @@ PostgreSQL test run).
 ## References
 
 - [Resilience4j core modules and decorators](https://github.com/resilience4j/resilience4j)
-- [Resilience4j 2.4.0 Spring Boot 4 module](https://central.sonatype.com/artifact/io.github.resilience4j/resilience4j-spring-boot4)
+- [Resilience4j getting started guide](https://resilience4j.readme.io/docs/getting-started)
 
