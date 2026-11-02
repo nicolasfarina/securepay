@@ -54,41 +54,39 @@ public class RateLimitFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
+        final String key;
+        final int capacity;
+        final Duration window;
         try {
             if (isLogin(request)) {
-                limitLoginFailures(request, response, filterChain);
-                return;
+                key = "login:ip:" + clientIpResolver.resolve(request);
+                capacity = loginMaxAttempts;
+                window = loginWindow;
+            } else {
+                key = paymentKey(request);
+                capacity = paymentMaxRequests;
+                window = paymentWindow;
             }
-
-            String key = paymentKey(request);
-            RateLimitService.Decision decision = rateLimitService.tryAcquire(
-                    key, paymentMaxRequests, paymentWindow);
-            if (!decision.allowed()) {
-                reject(response, decision);
-                return;
-            }
-
-            filterChain.doFilter(request, response);
         } catch (ClientIpResolver.InvalidForwardedAddressException ex) {
-            // A trusted edge is misconfigured or has passed a caller-controlled header.
             response.sendError(HttpStatus.BAD_REQUEST.value());
-        } catch (DataAccessException | TransactionException ex) {
-            // A shared quota store must never fail open or masquerade as a 429.
-            response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
+            return;
         }
-    }
 
-    private void limitLoginFailures(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
-        String key = "login:ip:" + clientIpResolver.resolve(request);
-        RateLimitService.Decision decision = rateLimitService.tryAcquire(key, loginMaxAttempts, loginWindow);
+        final RateLimitService.Decision decision;
+        try {
+            decision = rateLimitService.tryAcquire(key, capacity, window);
+        } catch (DataAccessException | TransactionException ex) {
+            // Deny requests when the shared quota store fails; never bypass the limit.
+            response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
+            return;
+        }
+
         if (!decision.allowed()) {
             reject(response, decision);
             return;
         }
 
+        // Keep downstream exception handling outside the limiter's catch clauses.
         filterChain.doFilter(request, response);
     }
 
