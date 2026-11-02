@@ -46,9 +46,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
                         "default-src 'self'; script-src 'self'; "
-                        + "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+                        + "style-src 'self'; img-src 'self' data:; "
                         + "font-src 'self' data:; connect-src 'self'; "
-                        + "object-src 'none'; base-uri 'none'; frame-ancestors 'none'")))
+                        + "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
