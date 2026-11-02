@@ -1,0 +1,53 @@
+# Disposable DAST stack: no host ports, no production credentials, no durable storage.
+# Always start with a unique Compose project and remove it with --volumes.
+services:
+  postgres:
+    image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_DB: securepay_dast
+      POSTGRES_USER: securepay_dast
+      POSTGRES_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:?Generate ephemeral credentials}
+    volumes:
+      - dast-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "securepay_dast", "-d", "securepay_dast"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    networks: [dast]
+
+  api:
+    image: securepay-dast:${DAST_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      SECUREPAY_DATABASE_URL: jdbc:postgresql://postgres:5432/securepay_dast
+      SECUREPAY_DATABASE_USERNAME: securepay_dast
+      SECUREPAY_DATABASE_PASSWORD: ${SECUREPAY_DATABASE_PASSWORD:?Generate ephemeral credentials}
+      SECUREPAY_DEMO_PASSWORD: ${SECUREPAY_DEMO_PASSWORD:?Generate ephemeral credentials}
+      SECUREPAY_JWT_SECRET: ${SECUREPAY_JWT_SECRET:?Generate ephemeral credentials}
+      SECUREPAY_RATE_LIMIT_TRUSTED_PROXIES: ""
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 35s
+    networks: [dast]
+
+networks:
+  dast:
+    internal: true
+
+volumes:
+  dast-db:
