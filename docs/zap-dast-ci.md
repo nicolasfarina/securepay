@@ -31,8 +31,8 @@ or production services are used.
    - Authenticated `GET /api/payments/<nonexistent-uuid>` returns 404 (not
      401/403), establishing successful customer authentication and routing.
 2. ZAP receives the ephemeral JWT as an environment variable `DAST_JWT`
-   and substitutes it into the `Authorization: Bearer` header **only** for
-   the protected GET in its Requestor job. The Requestor also checks readiness
+   and uses a ZAP Replacer rule restricted by method GET and the exact
+   protected payment lookup URL to inject the bearer on the outbound request. The Requestor also checks readiness
    and OpenAPI. Response-code mismatches are blocking even when low-severity
    scan warnings are allowed. The traditional spider explores only disposable
    Swagger UI with form submission disabled, followed by passive scanning.
@@ -120,3 +120,7 @@ correct job level and injects the short-lived JWT explicitly on the protected
 GET; a previous 401 was caught and treated as an actual coverage failure.
 A rerun must confirm the Medium alerts are gone and inspect remaining Low
 findings. This documentation alone is not proof of a passing scan.
+
+### Authentication debugging (2 November 2026)
+
+The first two corrected plans still received 401 on the ZAP Requestor despite the separate preflight obtaining 404 with the exact same disposable JWT. The documented header formats alone did not work with this pinned ZAP version. The subsequent constrained Replacer rule initially failed because its `enabled` parameter was **not supported** by the installed add-on (the ZAP job logged `Unrecognised parameter for job replacer : enabled`). That parameter was removed, and the runner now rejects unrecognized parameters in **any** ZAP job. Authenticated Requestor coverage must return 404 in CI; if not, this PR remains a draft and cannot be treated as DAST-complete.
