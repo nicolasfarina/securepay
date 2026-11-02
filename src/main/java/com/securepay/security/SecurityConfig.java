@@ -44,6 +44,11 @@ public class SecurityConfig {
             @Value("${springdoc.swagger-ui.enabled:true}") boolean swaggerUiEnabled) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+                        "default-src 'self'; script-src 'self'; "
+                        + "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+                        + "font-src 'self' data:; connect-src 'self'; "
+                        + "object-src 'none'; base-uri 'none'; frame-ancestors 'none'")))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
