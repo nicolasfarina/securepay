@@ -1,0 +1,170 @@
+{
+  "target": "http://api:8080",
+  "mode": "passive-explicit-requests",
+  "checks": [
+    {
+      "name": "readiness",
+      "method": "GET",
+      "path": "/actuator/health/readiness",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "local OpenAPI document (no import/crawl)",
+      "method": "GET",
+      "path": "/v3/api-docs",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "anonymous payments",
+      "method": "GET",
+      "path": "/api/admin/payments",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "name": "anonymous metrics",
+      "method": "GET",
+      "path": "/actuator/metrics",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "name": "invalid bearer",
+      "method": "GET",
+      "path": "/api/admin/payments",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "name": "invalid login",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "name": "login customer-123",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "login customer-789",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "login admin-123",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "customer denied admin payments",
+      "method": "GET",
+      "path": "/api/admin/payments",
+      "expected": 403,
+      "actual": 403
+    },
+    {
+      "name": "customer denied metrics",
+      "method": "GET",
+      "path": "/actuator/metrics",
+      "expected": 403,
+      "actual": 403
+    },
+    {
+      "name": "admin payments",
+      "method": "GET",
+      "path": "/api/admin/payments",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "synthetic payment",
+      "method": "POST",
+      "path": "/api/payments",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "name": "own payment",
+      "method": "GET",
+      "path": "/api/payments/70e8d915-7a1f-4089-96da-3da1c0d8d071",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "other customer's payment hidden",
+      "method": "GET",
+      "path": "/api/payments/70e8d915-7a1f-4089-96da-3da1c0d8d071",
+      "expected": 404,
+      "actual": 404
+    },
+    {
+      "name": "logout",
+      "method": "POST",
+      "path": "/auth/logout",
+      "expected": 204,
+      "actual": 204
+    },
+    {
+      "name": "revoked bearer",
+      "method": "GET",
+      "path": "/api/payments/70e8d915-7a1f-4089-96da-3da1c0d8d071",
+      "expected": 401,
+      "actual": 401
+    }
+  ],
+  "alerts": [
+    {
+      "pluginId": "10111",
+      "alert": "Authentication Request Identified",
+      "risk": "Informational",
+      "confidence": "High",
+      "url": "http://api:8080/auth/login",
+      "description": "The given request has been identified as an authentication request. The 'Other Info' field contains a set of key=value lines which identify any relevant fields. If the request is in a context which has an Authentication Method set to \"Auto-Detect\" then this rule will change the authentication to match the request identified.",
+      "solution": "This is an informational alert rather than a vulnerability and so there is nothing to fix.",
+      "reference": "https://www.zaproxy.org/docs/desktop/addons/authentication-helper/auth-req-id/"
+    },
+    {
+      "pluginId": "10112",
+      "alert": "Session Management Response Identified",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "url": "http://api:8080/auth/login",
+      "description": "The given response has been identified as containing a session management token. The 'Other Info' field contains a set of header tokens that can be used in the Header Based Session Management Method. If the request is in a context which has a Session Management Method set to \"Auto-Detect\" then this rule will change the session management to use the tokens identified.",
+      "solution": "This is an informational alert rather than a vulnerability and so there is nothing to fix.",
+      "reference": "https://www.zaproxy.org/docs/desktop/addons/authentication-helper/session-mgmt-id/"
+    },
+    {
+      "pluginId": "10111",
+      "alert": "Authentication Request Identified",
+      "risk": "Informational",
+      "confidence": "High",
+      "url": "http://api:8080/auth/login",
+      "description": "The given request has been identified as an authentication request. The 'Other Info' field contains a set of key=value lines which identify any relevant fields. If the request is in a context which has an Authentication Method set to \"Auto-Detect\" then this rule will change the authentication to match the request identified.",
+      "solution": "This is an informational alert rather than a vulnerability and so there is nothing to fix.",
+      "reference": "https://www.zaproxy.org/docs/desktop/addons/authentication-helper/auth-req-id/"
+    },
+    {
+      "pluginId": "10111",
+      "alert": "Authentication Request Identified",
+      "risk": "Informational",
+      "confidence": "High",
+      "url": "http://api:8080/auth/login",
+      "description": "The given request has been identified as an authentication request. The 'Other Info' field contains a set of key=value lines which identify any relevant fields. If the request is in a context which has an Authentication Method set to \"Auto-Detect\" then this rule will change the authentication to match the request identified.",
+      "solution": "This is an informational alert rather than a vulnerability and so there is nothing to fix.",
+      "reference": "https://www.zaproxy.org/docs/desktop/addons/authentication-helper/auth-req-id/"
+    }
+  ],
+  "completed": true,
+  "zapVersion": "2.17.0",
+  "gatePassed": true
+}

@@ -1,0 +1,36 @@
+name: Passive DAST (local only)
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: dast-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  passive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare reports directory
+        run: mkdir -p dast/reports && chmod 777 dast/reports
+      - name: Safety unit tests
+        run: docker compose -p securepay-dast -f compose.dast.yaml run --rm --no-deps zap python3 -m unittest discover -s /zap/wrk -p 'test_*.py'
+      - name: Build disposable API
+        run: docker compose -p securepay-dast -f compose.dast.yaml build api
+      - name: Passive scan and authorization checks
+        run: docker compose -p securepay-dast -f compose.dast.yaml up --abort-on-container-exit --exit-code-from zap
+      - name: Upload sanitized results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: passive-dast-results
+          path: dast/reports/summary.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove disposable stack
+        if: always()
+        run: docker compose -p securepay-dast -f compose.dast.yaml down --volumes --remove-orphans
