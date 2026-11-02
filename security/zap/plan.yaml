@@ -22,7 +22,6 @@ jobs:
       deleteAllRules: true
     rules:
       - description: disposable-payment-read-only-bearer
-        enabled: true
         url: "^http://api:8080/api/payments/00000000-0000-0000-0000-000000000000$"
         method: GET
         matchType: req_header
