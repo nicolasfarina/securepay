@@ -26,7 +26,7 @@ Con PowerShell 7, Docker Desktop y el motor Docker funcionando:
 
 ```powershell
 pwsh -NoProfile -File .\scripts\test-monitoring.ps1
-docker run --rm --mount "type=bind,source=$((Get-Location).Path)\monitoring,target=/rules,readonly" --entrypoint /bin/promtool prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2 test rules /rules/alerts-test.yml
+docker run --rm --mount "type=bind,source=$((Get-Location).Path)\monitoring,target=/rules,readonly" --entrypoint /bin/promtool prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06 test rules /rules/alerts-test.yml
 ```
 
 El script crea un proyecto Compose con nombre único, credenciales temporales y puertos aleatorios en loopback; obtiene un token de administrador para el scraper y comprueba el resultado `up=1` y el bucket de 500 ms. Luego detiene solo la API de ese proyecto y espera la entrega de `SecurePayScrapeFailed` al receptor local. Al terminar elimina sus contenedores, imágenes de prueba, volumen de base y archivo temporal del token. No inicia ni detiene proyectos Compose existentes. El token demo vence según la configuración JWT, por lo que una sesión de monitoreo prolongada requiere renovación segura.

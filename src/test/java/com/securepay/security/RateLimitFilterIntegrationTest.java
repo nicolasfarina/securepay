@@ -24,6 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class RateLimitFilterIntegrationTest {
 
+    private static final String TEST_PASSWORD = "test-only-securepay-password";
+
     private static final String PAYMENT = """
             {"merchantId":"merchant-1","amount":10.00,"currency":"USD"}
             """;
@@ -38,7 +40,7 @@ class RateLimitFilterIntegrationTest {
         login("customer-123", "wrong", "203.0.113.10")
                 .andExpect(status().isUnauthorized());
 
-        MvcResult limited = login("customer-123", "local-development-only", "203.0.113.10")
+        MvcResult limited = login("customer-123", TEST_PASSWORD, "203.0.113.10")
                 .andExpect(status().isTooManyRequests())
                 .andReturn();
 
@@ -71,7 +73,7 @@ class RateLimitFilterIntegrationTest {
     }
 
     private String token(String username) throws Exception {
-        String body = login(username, "local-development-only", "203.0.113.20")
+        String body = login(username, TEST_PASSWORD, "203.0.113.20")
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.accessToken");

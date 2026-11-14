@@ -30,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class ApiNegativeSecurityTest {
 
+    private static final String TEST_PASSWORD = "test-only-securepay-password";
+
     private static final String WRONG_CREDENTIALS = """
             {"username":"customer-123","password":"not-the-password"}
             """;
@@ -96,8 +98,8 @@ class ApiNegativeSecurityTest {
                         .with(remoteAddress("198.51.100.51"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"customer-123","password":"local-development-only"}
-                                """))
+                                {"username":"customer-123","password":"%s"}
+                                """.formatted(TEST_PASSWORD)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.accessToken");

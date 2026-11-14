@@ -17,6 +17,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class PaymentControllerIntegrationTest {
 
+    private static final String TEST_PASSWORD = "test-only-securepay-password";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -99,7 +101,7 @@ class PaymentControllerIntegrationTest {
     private String bearer(String username) throws Exception {
         String response = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson(username, "local-development-only")))
+                        .content(loginJson(username, TEST_PASSWORD)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
