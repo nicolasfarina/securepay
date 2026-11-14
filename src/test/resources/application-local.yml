@@ -1,0 +1,4 @@
+securepay:
+  security:
+    demo-password: test-only-securepay-password
+    jwt-secret: test-only-signing-key-that-is-long-enough-for-hmac-sha256

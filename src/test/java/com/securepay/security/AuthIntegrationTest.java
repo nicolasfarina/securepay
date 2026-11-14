@@ -21,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class AuthIntegrationTest {
 
+    private static final String TEST_PASSWORD = "test-only-securepay-password";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -28,7 +30,7 @@ class AuthIntegrationTest {
     void loginReturnsBearerJwtWithoutPasswordClaims() throws Exception {
         String response = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("customer-123", "local-development-only")))
+                        .content(loginJson("customer-123", TEST_PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andReturn().getResponse().getContentAsString();
@@ -60,7 +62,7 @@ class AuthIntegrationTest {
 
     @Test
     void customerCannotAccessAdminEndpoint() throws Exception {
-        String token = login("customer-123", "local-development-only");
+        String token = login("customer-123", TEST_PASSWORD);
 
         mockMvc.perform(get("/api/admin/payments")
                         .header("Authorization", "Bearer " + token))
@@ -69,7 +71,7 @@ class AuthIntegrationTest {
 
     @Test
     void adminCanAccessAdminEndpoint() throws Exception {
-        String token = login("admin-123", "local-development-only");
+        String token = login("admin-123", TEST_PASSWORD);
 
         mockMvc.perform(get("/api/admin/payments")
                         .header("Authorization", "Bearer " + token))

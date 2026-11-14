@@ -1,0 +1,6 @@
+# Historical local demo credential shown in README examples in commit
+# 21ab74c97eccb46f2b4c08ccedee98cd2a7af935. The current examples use a placeholder;
+# keep the finding scoped to these two historical locations until the repository
+# history is intentionally rewritten.
+21ab74c97eccb46f2b4c08ccedee98cd2a7af935:README.md:curl-auth-user:60
+21ab74c97eccb46f2b4c08ccedee98cd2a7af935:README.es.md:curl-auth-user:60

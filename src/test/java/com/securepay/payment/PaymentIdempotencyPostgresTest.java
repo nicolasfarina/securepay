@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "SECUREPAY_POSTGRES_TEST", matches = "true")
 class PaymentIdempotencyPostgresTest {
+    private static final String TEST_PASSWORD = "test-only-securepay-password";
     @Autowired private MockMvc mockMvc;
     @Autowired private PaymentRepository payments;
     @Autowired private PaymentService paymentService;
@@ -134,7 +135,7 @@ class PaymentIdempotencyPostgresTest {
     private String bearer(String username) throws Exception {
         String response = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"" + username + "\",\"password\":\"local-development-only\"}"))
+                        .content("{\"username\":\"" + username + "\",\"password\":\"" + TEST_PASSWORD + "\"}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return "Bearer " + JsonPath.<String>read(response, "$.accessToken");
     }
