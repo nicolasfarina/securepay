@@ -43,103 +43,6 @@ jobs:
           java-version: "25"
           cache: maven
 
-      - name: Resolve Maven dependencies before Trivy
-        run: mvn -B dependency:resolve
-
-      - name: Scan dependencies for vulnerabilities
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          version: 'v0.76.1'
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          format: table
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build container image for scanning
-        id: build-image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: false
-          load: true
-          tags: securepay:ci
-
-      - name: Scan container image for vulnerabilities
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          version: 'v0.76.1'
-          scan-type: image
-          scan-ref: securepay:ci
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          format: table
-
-      - name: Validate alert rules
-        run: >-
-          docker run --rm -v "$PWD/monitoring:/rules:ro" --entrypoint /bin/promtool
-          prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
-          test rules /rules/alerts-test.yml
-
-      - name: Scan monitoring image for vulnerabilities
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          version: 'v0.76.1'
-          scan-type: image
-          scan-ref: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          format: table
-
-      - name: Build local alert delivery images
-        run: |
-          docker build -f monitoring/alertmanager/Dockerfile -t securepay-alertmanager:ci .
-          docker build -f monitoring/alert-receiver/Dockerfile -t securepay-alert-receiver:ci .
-
-      - name: Scan local Alertmanager image
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          version: 'v0.76.1'
-          scan-type: image
-          scan-ref: securepay-alertmanager:ci
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          format: table
-
-      - name: Scan local alert receiver image
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          version: 'v0.76.1'
-          scan-type: image
-          scan-ref: securepay-alert-receiver:ci
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          format: table
-
-      - name: Generate container image SBOM
-        if: always() && steps.build-image.outcome == 'success'
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          version: 'v0.76.1'
-          scan-type: image
-          scan-ref: securepay:ci
-          format: cyclonedx
-          output: securepay-image-sbom.cdx.json
-          exit-code: "0"
-
       - name: Run unit and HTTP integration tests
         run: mvn -B -Duser.timezone=UTC clean verify
 
@@ -161,5 +64,151 @@ jobs:
             target/surefire-reports/
             target/spotbugsXml.xml
             target/classes/META-INF/sbom/application.cdx.json
-            securepay-image-sbom.cdx.json
           if-no-files-found: warn
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Resolve Maven dependencies before Trivy
+        run: mvn -B dependency:resolve
+
+      - name: Scan dependencies for vulnerabilities
+        id: scan-dependencies
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.2'
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build container image for scanning
+        id: build-image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: securepay:ci
+
+      - name: Scan container image for vulnerabilities
+        id: scan-app-image
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.2'
+          scan-type: image
+          scan-ref: securepay:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Validate alert rules
+        run: >-
+          docker run --rm -v "$PWD/monitoring:/rules:ro" --entrypoint /bin/promtool
+          prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
+          test rules /rules/alerts-test.yml
+
+      - name: Scan monitoring image for vulnerabilities
+        id: scan-monitoring-image
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.2'
+          scan-type: image
+          scan-ref: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Build local alert delivery images
+        run: |
+          docker build -f monitoring/alertmanager/Dockerfile -t securepay-alertmanager:ci .
+          docker build -f monitoring/alert-receiver/Dockerfile -t securepay-alert-receiver:ci .
+
+      - name: Scan local Alertmanager image
+        id: scan-alertmanager-image
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.2'
+          scan-type: image
+          scan-ref: securepay-alertmanager:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Scan local alert receiver image
+        id: scan-alert-receiver-image
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.2'
+          scan-type: image
+          scan-ref: securepay-alert-receiver:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Generate container image SBOM
+        if: always() && steps.build-image.outcome == 'success'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: 'v0.76.2'
+          scan-type: image
+          scan-ref: securepay:ci
+          format: cyclonedx
+          output: securepay-image-sbom.cdx.json
+          exit-code: "0"
+
+      - name: Upload container image SBOM
+        if: always() && steps.build-image.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: securepay-image-sbom
+          path: securepay-image-sbom.cdx.json
+          if-no-files-found: warn
+
+      - name: Enforce Trivy results
+        if: always()
+        env:
+          DEPENDENCIES: ${{ steps.scan-dependencies.outcome }}
+          APP_IMAGE: ${{ steps.scan-app-image.outcome }}
+          MONITORING_IMAGE: ${{ steps.scan-monitoring-image.outcome }}
+          ALERTMANAGER_IMAGE: ${{ steps.scan-alertmanager-image.outcome }}
+          ALERT_RECEIVER_IMAGE: ${{ steps.scan-alert-receiver-image.outcome }}
+        run: |
+          printf 'Trivy outcomes: dependencies=%s app-image=%s monitoring-image=%s alertmanager=%s alert-receiver=%s\n' \
+            "$DEPENDENCIES" "$APP_IMAGE" "$MONITORING_IMAGE" "$ALERTMANAGER_IMAGE" "$ALERT_RECEIVER_IMAGE"
+          if [[ "$DEPENDENCIES" != "success" || "$APP_IMAGE" != "success" || \
+                "$MONITORING_IMAGE" != "success" || "$ALERTMANAGER_IMAGE" != "success" || \
+                "$ALERT_RECEIVER_IMAGE" != "success" ]]; then
+            echo "One or more Trivy scans found a blocking vulnerability or could not complete."
+            exit 1
+          fi
